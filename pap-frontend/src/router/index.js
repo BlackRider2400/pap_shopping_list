@@ -18,13 +18,15 @@ const routes = [
 	},
 	{
 		path: "/lists",
+		redirect: "/lists/1",
 		name: "Lists",
 		component: () => import("../views/Lists.vue"),
 		children: [
 			{
-				path: "list-body",
-				name: "ListBody",
+				path: ":id",
+				name: "ListDetail",
 				component: () => import("../views/Lists/ListBody.vue"),
+				props: true,
 			},
 		],
 	},

@@ -7,17 +7,17 @@
 <script setup>
 	import { defineProps, defineEmits } from "vue";
 
-	defineProps({
+	const props = defineProps({
 		type: {
 			type: String,
 			default: "primary",
 		},
 	});
 
-	defineEmits(["click"]);
+	const emit = defineEmits(["click"]); // Przypisanie defineEmits do zmiennej emit
 
 	const handleClick = (event) => {
-		emit("click", event);
+		emit("click", event); // Teraz emit jest zdefiniowany
 	};
 </script>
 

@@ -1,56 +1,36 @@
 <template>
 	<div id="lists-container">
 		<div id="lists-menu">
-			<div v-for="list in lists.lists" :key="list.id">
+			<div
+				v-for="list in lists.lists"
+				:key="list.id"
+				@click="setCurrentList(list)"
+				class="list-item"
+			>
 				{{ list.name }}
 			</div>
 		</div>
-		<div id="lists-window">Reszta</div>
+		<div id="lists-window">
+			<router-view />
+		</div>
 	</div>
-	<div></div>
 </template>
 
 <script setup>
-	import { reactive } from "vue";
+	import { reactive, provide } from "vue";
+	import { useRouter } from "vue-router";
+	import testList from "../assets/testList.json";
+	import { Lists } from "../models/Lists";
 
-	class ReactiveBase {
-		constructor(initialState) {
-			return reactive(initialState);
-		}
-	}
+	const lists = Lists.fromJSON(testList);
 
-	class List extends ReactiveBase {
-		constructor(id, name, items, owner, users) {
-			super({ name, items, owner, users });
-			this.id = id;
-		}
-	}
+	provide("lists", lists);
 
-	class Lists extends ReactiveBase {
-		constructor(lists) {
-			super({ lists });
-		}
-	}
+	const router = useRouter();
 
-	const list1 = new List(1, "Lista 1", ["item1", "item2"], "owner1", [
-		"user1",
-		"user2",
-	]);
-
-	const list2 = new List(2, "Lista 2", ["item1", "item2"], "owner1", [
-		"user1",
-		"user2",
-	]);
-
-	const list3 = new List(3, "Lista 3", ["item1", "item2"], "owner1", [
-		"user1",
-		"user2",
-	]);
-
-	const lists = new Lists([]);
-	lists.lists.push(list1);
-	lists.lists.push(list2);
-	lists.lists.push(list3);
+	const setCurrentList = (list) => {
+		router.push({ name: "ListDetail", params: { id: list.id } });
+	};
 </script>
 
 <style scoped lang="scss">
@@ -61,12 +41,24 @@
 	}
 
 	#lists-menu {
-		height: 100%;
-		background-color: #f0f0f0;
+		flex: 1;
+		background-color: #ffffff;
+		border-right: 1px solid #ccc;
+	}
+
+	.list-item {
+		padding: 10px;
+		cursor: pointer;
+		border-bottom: 1px solid #eee;
+	}
+
+	.list-item:hover {
+		background-color: #f9f9f9;
 	}
 
 	#lists-window {
-		height: 100%;
-		background-color: #f0f0f0;
+		flex: 4;
+		padding: 20px;
+		background-color: #fafafa;
 	}
 </style>

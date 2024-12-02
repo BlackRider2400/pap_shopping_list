@@ -1,22 +1,31 @@
 <template>
 	<div class="input-wrapper">
-		<label v-if="label" :for="id">{{ label }}</label>
+		<label v-if="label && mode == 'default'" :for="id">{{ label }}</label>
+
 		<input
+			ref="inputRef"
 			:id="id"
 			:type="type"
 			:placeholder="placeholder"
 			:value="modelValue"
 			@input="updateValue"
-			:class="{ error: !!errorMessage }"
+			:class="{
+				error: !!errorMessage,
+				'h2-like': mode == 'h2',
+				'p-like': mode == 'p',
+				crossed: crossed,
+			}"
+			:disabled="disabled"
 		/>
+
 		<div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
 	</div>
 </template>
 
 <script setup>
-	import { defineProps, defineEmits } from "vue";
+	import { defineProps, defineEmits, watch, ref, nextTick } from "vue";
 
-	defineProps({
+	const props = defineProps({
 		id: {
 			type: String,
 			required: true,
@@ -41,20 +50,46 @@
 			type: String,
 			default: "",
 		},
+		mode: {
+			type: String,
+			default: "default",
+		},
+		disabled: {
+			type: Boolean,
+			default: false,
+		},
+		crossed: {
+			type: Boolean,
+			default: false,
+		},
 	});
 
-	defineEmits(["update:modelValue"]);
+	const emit = defineEmits(["update:modelValue"]);
 
 	const updateValue = (event) => {
 		emit("update:modelValue", event.target.value);
 	};
+
+	const inputRef = ref(null);
+
+	watch(
+		() => props.crossed,
+		(newVal, oldVal) => {
+			if (!newVal && oldVal) {
+				nextTick(() => {
+					if (inputRef.value) {
+						inputRef.value.focus();
+					}
+				});
+			}
+		}
+	);
 </script>
 
 <style scoped lang="scss">
 	.input-wrapper {
 		display: flex;
 		flex-direction: column;
-		margin-bottom: 15px;
 
 		label {
 			margin-bottom: 5px;
@@ -76,6 +111,31 @@
 
 			&.error {
 				border-color: red;
+			}
+
+			/* Stylizacja dla trybu h2 */
+			&.h2-like {
+				font-size: 24px;
+				font-weight: bold;
+				border: none;
+				border-bottom: 2px solid #007bff;
+				padding: 5px;
+				outline: none;
+				transition: border-color 0.3s;
+			}
+
+			/* Stylizacja dla trybu p */
+			&.p-like {
+				font-size: 16px;
+				font-weight: normal;
+				border: none;
+				padding: 5px;
+				outline: none;
+				transition: border-color 0.3s;
+			}
+
+			&.crossed {
+				text-decoration: line-through;
 			}
 		}
 
