@@ -3,7 +3,7 @@
 		<div id="main">
 			<Nav id="nav" />
 			<router-view id="view" />
-			<Footer -d="footer" />
+			<Footer id="footer" />
 		</div>
 	</div>
 </template>
