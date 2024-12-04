@@ -1,7 +1,6 @@
 <template>
 	<div class="input-wrapper">
 		<label v-if="label && mode == 'default'" :for="id">{{ label }}</label>
-
 		<input
 			ref="inputRef"
 			:id="id"
@@ -16,13 +15,13 @@
 				crossed: crossed,
 			}"
 			:disabled="disabled"
+			@blur="handleBlur"
 		/>
-
 		<div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
 	</div>
 </template>
 
-<script setup>
+  <script setup>
 	import { defineProps, defineEmits, watch, ref, nextTick } from "vue";
 
 	const props = defineProps({
@@ -62,9 +61,13 @@
 			type: Boolean,
 			default: false,
 		},
+		shouldFocus: {
+			type: Boolean,
+			default: false,
+		},
 	});
 
-	const emit = defineEmits(["update:modelValue"]);
+	const emit = defineEmits(["update:modelValue", "focused", "blur"]);
 
 	const updateValue = (event) => {
 		emit("update:modelValue", event.target.value);
@@ -72,21 +75,32 @@
 
 	const inputRef = ref(null);
 
+	const setFocus = () => {
+		if (inputRef.value) {
+			inputRef.value.focus();
+			emit("focused");
+		}
+	};
+
 	watch(
-		() => props.crossed,
-		(newVal, oldVal) => {
-			if (!newVal && oldVal) {
-				nextTick(() => {
-					if (inputRef.value) {
-						inputRef.value.focus();
-					}
-				});
+		() => props.shouldFocus,
+		(newVal) => {
+			if (newVal) {
+				setFocus();
 			}
 		}
 	);
+
+	const handleBlur = () => {
+		emit("blur");
+	};
+
+	defineExpose({
+		focus: setFocus,
+	});
 </script>
 
-<style scoped lang="scss">
+  <style scoped lang="scss">
 	.input-wrapper {
 		display: flex;
 		flex-direction: column;
@@ -113,7 +127,6 @@
 				border-color: red;
 			}
 
-			/* Stylizacja dla trybu h2 */
 			&.h2-like {
 				font-size: 24px;
 				font-weight: bold;
@@ -124,7 +137,6 @@
 				transition: border-color 0.3s;
 			}
 
-			/* Stylizacja dla trybu p */
 			&.p-like {
 				font-size: 16px;
 				font-weight: normal;

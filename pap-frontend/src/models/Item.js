@@ -1,9 +1,7 @@
-// src/models/Item.js
-import { ReactiveBase } from "./ReactiveBase";
-
-export class Item extends ReactiveBase {
+export class Item {
 	constructor(id, text, status = true) {
-		super({ text, status });
 		this.id = id;
+		this.text = text;
+		this.status = status;
 	}
 }

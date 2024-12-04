@@ -16,16 +16,11 @@
 	</div>
 </template>
 
-<script setup>
-	import { reactive, provide } from "vue";
+  <script setup>
+	import { inject } from "vue";
 	import { useRouter } from "vue-router";
-	import testList from "../assets/testList.json";
-	import { Lists } from "../models/Lists";
 
-	const lists = Lists.fromJSON(testList);
-
-	provide("lists", lists);
-
+	const lists = inject("lists");
 	const router = useRouter();
 
 	const setCurrentList = (list) => {
@@ -38,6 +33,7 @@
 		display: flex;
 		flex-wrap: nowrap;
 		background-color: #f0f0f0;
+		min-height: calc(100vh - 348px);
 	}
 
 	#lists-menu {

@@ -8,21 +8,27 @@
 	</div>
 </template>
 
-<script setup>
+  <script setup>
 	import Nav from "./components/Nav.vue";
 	import Footer from "./components/Footer.vue";
 	import axios from "axios";
-	import { provide, reactive } from "vue";
+	import { provide } from "vue";
+	import { Lists } from "./models/Lists";
 
-	const state = reactive({
-		endpoint: "https://mylovelyserver.fun:8443/pap_shopping_list/api/",
-	});
-	provide("state", state);
+	const lists = Lists.fromJSON([]);
+
+	provide("lists", lists);
 
 	const fetchDataFromApi = async () => {
-		let ep2 = state.endpoint + "lists/getAllLists?userId=1";
-		const response = await axios.get(ep2);
-		console.log(JSON.stringify(response.data, null, 2));
+		try {
+			const endpoint =
+				"https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/getAllLists?userId=1";
+			const response = await axios.get(endpoint);
+			lists.updateFromJSON(response.data);
+			console.log("Dane pobrane i zaktualizowane:", JSON.stringify(lists));
+		} catch (error) {
+			console.error("Błąd podczas pobierania danych z API:", error);
+		}
 	};
 
 	fetchDataFromApi();

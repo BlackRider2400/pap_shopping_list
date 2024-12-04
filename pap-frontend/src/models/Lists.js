@@ -1,21 +1,22 @@
-// src/models/Lists.js
-import { ReactiveBase } from "./ReactiveBase";
+import { reactive } from "vue";
 import { List } from "./List";
-import { Item } from "./Item";
 
-export class Lists extends ReactiveBase {
-	constructor(lists) {
-		super({ lists });
+export class Lists {
+	constructor(lists = []) {
+		this.lists = reactive(lists);
 	}
 
-	// Alternatywny konstruktor: Tworzenie instancji z JSON
 	static fromJSON(jsonData) {
-		const listsArray = jsonData.lists.map((listData) => {
-			const items = listData.items.map((itemData) => new Item(itemData.id, itemData.text, itemData.status));
-			return new List(listData.id, listData.name, items, listData.owner, listData.users);
-		});
+		const listsArray = jsonData.map(
+			(listData) => new List(listData.id, listData.name, listData.items, listData.owner, listData.users)
+		);
 		return new Lists(listsArray);
 	}
 
-	// Możesz dodać inne metody, jeśli są potrzebne
+	updateFromJSON(jsonData) {
+		this.lists.splice(0, this.lists.length);
+		jsonData.forEach((listData) => {
+			this.lists.push(new List(listData.id, listData.name, listData.items, listData.owner, listData.users));
+		});
+	}
 }
