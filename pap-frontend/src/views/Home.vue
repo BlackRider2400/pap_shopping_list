@@ -1,6 +1,5 @@
 <template>
 	<div id="home-page">
-		<!-- Hero Section -->
 		<section class="hero">
 			<div class="hero-content">
 				<h1>Lista zakupowa zawsze pod ręką</h1>
@@ -15,7 +14,6 @@
 			</div>
 		</section>
 
-		<!-- Features Section -->
 		<section class="features">
 			<h2>Dlaczego warto wybrać nasz produkt?</h2>
 			<div class="features-container">
@@ -31,7 +29,8 @@
 			</div>
 		</section>
 
-		<!-- Call to Action -->
+		<div ref="threeContainer" class="three-container"></div>
+
 		<section class="cta">
 			<h2>Dołącz do tysięcy zadowolonych użytkowników!</h2>
 			<Button class="cta-button" @click="navigateToSignup"
@@ -42,10 +41,15 @@
 </template>
 
   <script setup>
+	import { ref, onMounted } from "vue";
 	import { useRouter } from "vue-router";
 	import Button from "@/components/Button.vue";
+	import * as THREE from "three";
+	import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
-	// Przykładowe dane dla sekcji Features
+	import earthTexture from "@/assets/moonmap4k.jpg";
+	import getStarfield from "./getStarfield.js";
+
 	const features = [
 		{
 			id: 1,
@@ -79,7 +83,6 @@
 
 	const router = useRouter();
 
-	// Funkcje nawigacyjne
 	const navigateToLists = () => {
 		router.push("/lists");
 	};
@@ -87,15 +90,75 @@
 	const navigateToSignup = () => {
 		router.push("/register");
 	};
+
+	// Three.js code //
+
+	const threeContainer = ref(null);
+
+	onMounted(() => {
+		if (threeContainer.value) {
+			const w = threeContainer.value.clientWidth;
+			const h = threeContainer.value.clientHeight;
+			const renderer = new THREE.WebGLRenderer({ antialias: true });
+			renderer.setSize(w, h);
+			threeContainer.value.appendChild(renderer.domElement);
+
+			const fov = 75;
+			const aspect = w / h;
+			const near = 0.1;
+			const far = 1000;
+			const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+			camera.position.z = 2.5;
+
+			const scene = new THREE.Scene();
+
+			const earthGroup = new THREE.Group();
+			earthGroup.rotation.z = -23.5 * (Math.PI / 180);
+			scene.add(earthGroup);
+
+			const controls = new OrbitControls(camera, renderer.domElement);
+			controls.enableDamping = true;
+			controls.dampingFactor = 0.02;
+
+			const loader = new THREE.TextureLoader();
+			const geometry = new THREE.IcosahedronGeometry(1, 16);
+			const material = new THREE.MeshStandardMaterial({
+				map: loader.load(earthTexture),
+			});
+			const earthMesh = new THREE.Mesh(geometry, material);
+			earthGroup.add(earthMesh);
+
+			const stars = getStarfield();
+			scene.add(stars);
+
+			const hemilight = new THREE.HemisphereLight(0xffffff, 0xffffff, 1);
+			scene.add(hemilight);
+
+			function animate(t = 0) {
+				requestAnimationFrame(animate);
+				earthMesh.rotation.y += 0.001;
+				renderer.render(scene, camera);
+				controls.update();
+			}
+
+			animate();
+		}
+	});
 </script>
 
-  <style scoped lang="scss">
+<style scoped lang="scss">
 	#home-page {
 		font-family: "Arial, sans-serif";
 		color: #333;
 	}
 
-	/* Hero Section */
+	.three-container {
+		width: 100%;
+		height: 1600px;
+		margin-top: 20px;
+		margin-bottom: 20px;
+	}
+
 	.hero {
 		background: url("@/assets/shopper.png") center center/cover no-repeat;
 		color: #fff;
@@ -124,7 +187,6 @@
 		}
 	}
 
-	/* Features Section */
 	.features {
 		padding: 60px 20px;
 		background-color: #f9f9f9;
@@ -172,7 +234,6 @@
 		}
 	}
 
-	/* Call to Action */
 	.cta {
 		padding: 60px 20px;
 		text-align: center;
@@ -200,7 +261,6 @@
 		}
 	}
 
-	/* Responsive Design */
 	@media (max-width: 768px) {
 		.features-container {
 			flex-direction: column;
