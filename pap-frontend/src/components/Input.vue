@@ -42,7 +42,7 @@
 			default: "",
 		},
 		modelValue: {
-			type: String,
+			type: [String, Number],
 			required: true,
 		},
 		errorMessage: {
