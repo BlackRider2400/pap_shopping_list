@@ -7,6 +7,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Optional;
+
 @RestController
 @RequestMapping("/api/auth")
 @CrossOrigin(origins = "*")
@@ -40,12 +42,12 @@ public class AuthController {
 
     @PostMapping("/request-password-reset")
     public ResponseEntity<String> requestPasswordReset(@RequestParam String email) {
-        try {
-            dbService.initiatePasswordReset(email);
-            return ResponseEntity.ok("Password reset email sent");
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+        Optional<User> userOptional = dbService.getUserByEmail(email);
+        if (userOptional.isPresent()) {
+            dbService.initiatePasswordReset(email); // Generate token and send reset email
         }
+        // Always return a generic success message, regardless of user existence
+        return ResponseEntity.ok("If the email exists, a password reset link will be sent.");
     }
 
     @PostMapping("/reset-password")

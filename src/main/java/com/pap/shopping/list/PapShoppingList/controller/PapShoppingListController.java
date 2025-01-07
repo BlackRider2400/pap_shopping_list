@@ -13,7 +13,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/lists")
-@CrossOrigin(origins = "*")
 public class PapShoppingListController {
 
     private final DbService dbService;
@@ -23,11 +22,12 @@ public class PapShoppingListController {
         this.dbService = dbService;
     }
 
-    // Helper method to get the currently logged-in user's ID
     private Long getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String currentUserEmail = authentication.getName();
-        return dbService.getUserByEmail(currentUserEmail)
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new IllegalStateException("User is not authenticated");
+        }
+        return dbService.getUserByEmail(authentication.getName())
                 .orElseThrow(() -> new IllegalArgumentException("User not found"))
                 .getId();
     }
@@ -61,6 +61,43 @@ public class PapShoppingListController {
         Long userId = getCurrentUserId();
         newList.setOwner(dbService.getUserById(userId).orElseThrow(() -> new IllegalArgumentException("User not found")));
         return ResponseEntity.ok(dbService.saveShoppingList(newList));
+    }
+
+    @DeleteMapping("/deleteItemById/{id}")
+    public ResponseEntity<Void> deleteItemById(@PathVariable Long id) {
+        Long userId = getCurrentUserId();
+        if (dbService.getItemByIdAndUserId(id, userId).isPresent()) {
+            dbService.deleteItem(id);
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    @PutMapping("/changeStateOfItem/{id}")
+    public ResponseEntity<Item> changeStateOfItem(@PathVariable Long id) {
+        Long userId = getCurrentUserId();
+        return dbService.getItemByIdAndUserId(id, userId).map(item -> {
+            item.setStatus(!item.getStatus());
+            return ResponseEntity.ok(dbService.saveItem(item));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/changeValueOfItem/{id}")
+    public ResponseEntity<Item> changeValueOfItem(@PathVariable Long id, @RequestBody String newValue) {
+        Long userId = getCurrentUserId();
+        return dbService.getItemByIdAndUserId(id, userId).map(item -> {
+            item.setData(newValue);
+            return ResponseEntity.ok(dbService.saveItem(item));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/renameList/{id}")
+    public ResponseEntity<ShoppingList> renameList(@PathVariable Long id, @RequestBody String newName) {
+        Long userId = getCurrentUserId();
+        return dbService.getShoppingListByIdAndUserId(id, userId).map(list -> {
+            list.setName(newName);
+            return ResponseEntity.ok(dbService.saveShoppingList(list));
+        }).orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping("/addNewItem/{listId}")
