@@ -9,4 +9,6 @@ import java.util.Optional;
 public interface ShoppingListRepository extends JpaRepository<ShoppingList, Long> {
     List<ShoppingList> findAllByOwnerId(Long ownerId);
     Optional<ShoppingList> findByIdAndOwnerId(Long id, Long ownerId);
+    boolean existsByIdAndOwnerId(Long id, Long ownerId);
+    boolean existsByIdAndSharedUsersId(Long id, Long ownerId);
 }

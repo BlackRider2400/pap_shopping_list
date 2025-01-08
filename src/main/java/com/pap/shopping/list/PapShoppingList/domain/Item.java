@@ -17,6 +17,10 @@ public class Item {
 
     private String data;
     private Boolean status;
+    private Double quantity;
+
+    @Enumerated(EnumType.STRING)
+    private Unit unit;
 
     @ManyToOne
     @JsonBackReference

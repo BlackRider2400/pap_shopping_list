@@ -156,4 +156,40 @@ public class DbService {
     public Optional<Item> getItemByIdAndUserId(Long id, Long userId) {
         return itemRepository.findByIdAndShoppingListOwnerId(id, userId);
     }
+
+    public boolean isOwnerOfList(Long listId, Long userId) {
+        return shoppingListRepository.existsByIdAndOwnerId(listId, userId);
+    }
+
+    public boolean isSharedUserOfList(Long listId, Long userId) {
+        return shoppingListRepository.existsByIdAndSharedUsersId(listId, userId);
+    }
+
+    public void addSharedUserToList(Long listId, String email) {
+        ShoppingList shoppingList = shoppingListRepository.findById(listId)
+                .orElseThrow(() -> new IllegalArgumentException("Shopping list not found"));
+
+        User sharedUser = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        shoppingList.getUsers().add(sharedUser);
+        shoppingListRepository.save(shoppingList);
+    }
+
+    public void removeSharedUserFromList(Long listId, String email) {
+        ShoppingList shoppingList = shoppingListRepository.findById(listId)
+                .orElseThrow(() -> new IllegalArgumentException("Shopping list not found"));
+
+        User sharedUser = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        shoppingList.getUsers().remove(sharedUser);
+        shoppingListRepository.save(shoppingList);
+    }
+
+    public Long getListIdByItemId(Long itemId) {
+        return itemRepository.findById(itemId)
+                .map(item -> item.getShoppingList().getId())
+                .orElseThrow(() -> new IllegalArgumentException("Item not found"));
+    }
 }
