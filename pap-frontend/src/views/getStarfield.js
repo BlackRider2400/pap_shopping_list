@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import ball from "./circle.png";
 
-export default function getStarfield({ numStars = 50000 } = {}) {
+export default function getStarfield({ numStars = 500 } = {}) {
 	function randomSpherePoint() {
 		const radius = Math.random() * 25 + 25;
 		const u = Math.random();
