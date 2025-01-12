@@ -11,6 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -35,15 +36,6 @@ public class DbService {
     @Autowired
     private EmailService emailService;
 
-    public User registerUser(User user) {
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        return userRepository.save(user);
-    }
-
-    public Optional<User> loginUser(String email, String rawPassword) {
-        return userRepository.findByEmail(email)
-                .filter(user -> passwordEncoder.matches(rawPassword, user.getPassword()));
-    }
 
     public void initiatePasswordReset(String email) {
         User user = userRepository.findByEmail(email)
@@ -72,10 +64,6 @@ public class DbService {
         userRepository.save(user);
     }
 
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
-    }
-
     public Optional<User> getUserById(Long id) {
         return userRepository.findById(id);
     }
@@ -86,18 +74,6 @@ public class DbService {
 
     public User saveUser(User user) {
         return userRepository.save(user);
-    }
-
-    public void deleteUser(Long id) {
-        userRepository.deleteById(id);
-    }
-
-    public List<ShoppingList> getAllShoppingLists() {
-        return shoppingListRepository.findAll();
-    }
-
-    public Optional<ShoppingList> getShoppingListById(Long id) {
-        return shoppingListRepository.findById(id);
     }
 
     public ShoppingList saveShoppingList(ShoppingList shoppingList) {
@@ -146,11 +122,24 @@ public class DbService {
     }
 
     public List<ShoppingList> getAllShoppingListsByUserId(Long userId) {
-        return shoppingListRepository.findAllByOwnerId(userId);
+        List<ShoppingList> ownedLists = shoppingListRepository.findAllByOwnerId(userId);
+        List<ShoppingList> sharedLists = shoppingListRepository.findAllSharedWithUser(userId);
+
+        List<ShoppingList> allLists = new ArrayList<>(ownedLists);
+        for (ShoppingList sharedList : sharedLists) {
+            if (!allLists.contains(sharedList)) {
+                allLists.add(sharedList);
+            }
+        }
+
+        return allLists;
     }
 
     public Optional<ShoppingList> getShoppingListByIdAndUserId(Long id, Long userId) {
-        return shoppingListRepository.findByIdAndOwnerId(id, userId);
+        Optional<ShoppingList> ownedList = shoppingListRepository.findByIdAndOwnerId(id, userId);
+        Optional<ShoppingList> sharedList = shoppingListRepository.findByIdAndSharedWithUser(id, userId);
+
+        return ownedList.isPresent() ? ownedList : sharedList;
     }
 
     public Optional<Item> getItemByIdAndUserId(Long id, Long userId) {
@@ -162,7 +151,7 @@ public class DbService {
     }
 
     public boolean isSharedUserOfList(Long listId, Long userId) {
-        return shoppingListRepository.existsByIdAndSharedUsersId(listId, userId);
+        return shoppingListRepository.existsByIdAndSharedUsers_Id(listId, userId);
     }
 
     public void addSharedUserToList(Long listId, String email) {
@@ -172,7 +161,7 @@ public class DbService {
         User sharedUser = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        shoppingList.getUsers().add(sharedUser);
+        shoppingList.getSharedUsers().add(sharedUser);
         shoppingListRepository.save(shoppingList);
     }
 
@@ -183,7 +172,7 @@ public class DbService {
         User sharedUser = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        shoppingList.getUsers().remove(sharedUser);
+        shoppingList.getSharedUsers().remove(sharedUser);
         shoppingListRepository.save(shoppingList);
     }
 

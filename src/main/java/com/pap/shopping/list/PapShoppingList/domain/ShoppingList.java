@@ -35,5 +35,5 @@ public class ShoppingList {
             joinColumns = @JoinColumn(name = "shopping_list_id"),
             inverseJoinColumns = @JoinColumn(name = "user_id")
     )
-    private List<User> users = new ArrayList<>();
+    private List<User> sharedUsers = new ArrayList<>();
 }

@@ -2,6 +2,7 @@ package com.pap.shopping.list.PapShoppingList.controller;
 
 import com.pap.shopping.list.PapShoppingList.domain.Item;
 import com.pap.shopping.list.PapShoppingList.domain.ShoppingList;
+import com.pap.shopping.list.PapShoppingList.domain.User;
 import com.pap.shopping.list.PapShoppingList.service.DbService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -9,7 +10,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/lists")
@@ -37,16 +41,20 @@ public class PapShoppingListController {
     }
 
     @GetMapping("/getAllLists")
-    public List<ShoppingList> getAllLists() {
+    public List<Map<String, Object>> getAllLists() {
         Long userId = getCurrentUserId();
-        return dbService.getAllShoppingListsByUserId(userId);
+        List<ShoppingList> shoppingLists = dbService.getAllShoppingListsByUserId(userId);
+        return shoppingLists.stream()
+                .map(this::mapShoppingListToResponse)
+                .toList();
     }
 
     @GetMapping("/getListById/{id}")
-    public ResponseEntity<ShoppingList> getListById(@PathVariable Long id) {
+    public ResponseEntity<Map<String, Object>> getListById(@PathVariable Long id) {
         Long userId = getCurrentUserId();
         if (canAccessList(id, userId)) {
             return dbService.getShoppingListByIdAndUserId(id, userId)
+                    .map(this::mapShoppingListToResponse)
                     .map(ResponseEntity::ok)
                     .orElse(ResponseEntity.notFound().build());
         }
@@ -64,10 +72,24 @@ public class PapShoppingListController {
     }
 
     @PostMapping("/addNewList")
-    public ResponseEntity<ShoppingList> addNewList(@RequestBody ShoppingList newList) {
+    public ResponseEntity<Map<String, Object>> addNewList(@RequestParam String name) {
         Long userId = getCurrentUserId();
-        newList.setOwner(dbService.getUserById(userId).orElseThrow(() -> new IllegalArgumentException("User not found")));
-        return ResponseEntity.ok(dbService.saveShoppingList(newList));
+        User owner = dbService.getUserById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        if (name == null || name.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        ShoppingList newList = ShoppingList.builder()
+                .name(name)
+                .owner(owner)
+                .items(new ArrayList<>())
+                .sharedUsers(new ArrayList<>())
+                .build();
+
+        ShoppingList savedList = dbService.saveShoppingList(newList);
+        return ResponseEntity.ok(mapShoppingListToResponse(savedList));
     }
 
     @DeleteMapping("/deleteItemById/{id}")
@@ -93,25 +115,34 @@ public class PapShoppingListController {
     }
 
     @PutMapping("/renameList/{id}")
-    public ResponseEntity<ShoppingList> renameList(@PathVariable Long id, @RequestBody String newName) {
+    public ResponseEntity<Map<String, Object>> renameList(@PathVariable Long id, @RequestBody String newName) {
         Long userId = getCurrentUserId();
         if (dbService.isOwnerOfList(id, userId)) {
             return dbService.getShoppingListByIdAndUserId(id, userId).map(list -> {
                 list.setName(newName);
-                return ResponseEntity.ok(dbService.saveShoppingList(list));
+                ShoppingList updatedList = dbService.saveShoppingList(list);
+                return ResponseEntity.ok(mapShoppingListToResponse(updatedList));
             }).orElse(ResponseEntity.notFound().build());
         }
         return ResponseEntity.status(403).build();
     }
 
     @PostMapping("/addNewItem/{listId}")
-    public ResponseEntity<ShoppingList> addNewItem(@PathVariable Long listId, @RequestBody Item newItem) {
+    public ResponseEntity<Map<String, Object>> addNewItem(@PathVariable Long listId, @RequestBody Item newItem) {
         Long userId = getCurrentUserId();
         if (canAccessList(listId, userId)) {
             return dbService.getShoppingListByIdAndUserId(listId, userId).map(list -> {
+                if (newItem.getQuantity() == null) {
+                    newItem.setQuantity(0.0);
+                }
+                if (newItem.getUnit() == null) {
+                    newItem.setUnit(null);
+                }
+
                 newItem.setShoppingList(list);
                 list.getItems().add(dbService.saveItem(newItem));
-                return ResponseEntity.ok(dbService.saveShoppingList(list));
+                ShoppingList updatedList = dbService.saveShoppingList(list);
+                return ResponseEntity.ok(mapShoppingListToResponse(updatedList));
             }).orElse(ResponseEntity.notFound().build());
         }
         return ResponseEntity.status(403).build();
@@ -135,5 +166,26 @@ public class PapShoppingListController {
             return ResponseEntity.ok().build();
         }
         return ResponseEntity.status(403).build();
+    }
+
+    private Map<String, Object> mapShoppingListToResponse(ShoppingList shoppingList) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("id", shoppingList.getId());
+        response.put("name", shoppingList.getName());
+        response.put("sharedUsers", shoppingList.getSharedUsers().stream()
+                .map(user -> Map.of("email", user.getEmail()))
+                .toList());
+        response.put("items", shoppingList.getItems().stream()
+                .map(item -> {
+                    Map<String, Object> itemResponse = new HashMap<>();
+                    itemResponse.put("id", item.getId());
+                    itemResponse.put("data", item.getData());
+                    itemResponse.put("status", item.getStatus());
+                    itemResponse.put("quantity", item.getQuantity());
+                    itemResponse.put("unit", item.getUnit() != null ? item.getUnit().toString() : null);
+                    return itemResponse;
+                })
+                .toList());
+        return response;
     }
 }

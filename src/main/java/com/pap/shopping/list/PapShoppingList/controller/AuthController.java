@@ -26,7 +26,7 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<User> registerUser(@RequestBody User newUser) {
         if (dbService.getUserByEmail(newUser.getEmail()).isPresent()) {
-            return ResponseEntity.badRequest().body(null); // Email already exists
+            return ResponseEntity.badRequest().body(null);
         }
         newUser.setPassword(passwordEncoder.encode(newUser.getPassword()));
         return ResponseEntity.ok(dbService.saveUser(newUser));
@@ -44,9 +44,9 @@ public class AuthController {
     public ResponseEntity<String> requestPasswordReset(@RequestParam String email) {
         Optional<User> userOptional = dbService.getUserByEmail(email);
         if (userOptional.isPresent()) {
-            dbService.initiatePasswordReset(email); // Generate token and send reset email
+            dbService.initiatePasswordReset(email);
         }
-        // Always return a generic success message, regardless of user existence
+
         return ResponseEntity.ok("If the email exists, a password reset link will be sent.");
     }
 
