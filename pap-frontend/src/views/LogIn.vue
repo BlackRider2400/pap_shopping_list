@@ -28,11 +28,10 @@
 	</div>
 </template>
 
-  <script setup>
+<script setup>
 	import { ref } from "vue";
 	import { useRouter } from "vue-router";
 	import axios from "axios";
-	import Cookies from "js-cookie";
 	import Input from "../components/Input.vue";
 	import Button from "../components/Button.vue";
 
@@ -44,18 +43,20 @@
 	const apiError = ref("");
 
 	const isLoading = ref(false);
-
 	const router = useRouter();
 
+	const validateEmail = (email) => {
+		const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+		return re.test(email);
+	};
+
 	const handleLogin = async () => {
-		// Resetowanie komunikatów błędów
 		emailError.value = "";
 		passwordError.value = "";
 		apiError.value = "";
 
 		let hasError = false;
 
-		// Walidacja pola email
 		if (!email.value) {
 			emailError.value = "Email jest wymagany!";
 			hasError = true;
@@ -64,7 +65,6 @@
 			hasError = true;
 		}
 
-		// Walidacja pola hasło
 		if (!password.value) {
 			passwordError.value = "Hasło jest wymagane!";
 			hasError = true;
@@ -72,7 +72,6 @@
 
 		if (hasError) return;
 
-		// Przygotowanie danych do wysłania
 		const payload = {
 			email: email.value,
 			password: password.value,
@@ -81,13 +80,13 @@
 		isLoading.value = true;
 
 		try {
-			const response = await axios.post("/api/auth/login", payload, {
-				withCredentials: true, // Umożliwia odbieranie ciasteczek z odpowiedzi
-			});
+			const response = await axios.post(
+				"https://mylovelyserver.fun:8443/pap_shopping_list/api/auth/login",
+				payload,
+				{ withCredentials: true }
+			);
 
 			if (response.status === 200) {
-				// Zakładam, że backend ustawia token w ciasteczku HttpOnly
-				// Możesz wyświetlić komunikat sukcesu lub przekierować użytkownika
 				router.push({ name: "Home" });
 			}
 		} catch (error) {
@@ -103,12 +102,6 @@
 		} finally {
 			isLoading.value = false;
 		}
-	};
-
-	// Funkcja pomocnicza do walidacji email
-	const validateEmail = (email) => {
-		const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-		return re.test(email);
 	};
 </script>
 

@@ -59,6 +59,7 @@
 					headers: {
 						"Content-Type": "application/json",
 					},
+					withCredentials: true,
 				}
 			);
 			toast.success("Lista została dodana.");
@@ -81,6 +82,7 @@
 						userId: 1,
 						id: listId,
 					},
+					withCredentials: true,
 				}
 			);
 			toast.error("Lista została usunięta.");

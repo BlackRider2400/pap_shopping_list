@@ -46,11 +46,10 @@
 	</div>
 </template>
 
-  <script setup>
+<script setup>
 	import { ref } from "vue";
 	import { useRouter } from "vue-router";
 	import axios from "axios";
-	import Cookies from "js-cookie";
 	import Input from "../components/Input.vue";
 	import Button from "../components/Button.vue";
 
@@ -67,8 +66,12 @@
 	const successMessage = ref("");
 
 	const isLoading = ref(false);
-
 	const router = useRouter();
+
+	const validateEmail = (email) => {
+		const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+		return re.test(email);
+	};
 
 	const handleRegister = async () => {
 		// Resetowanie komunikatów błędów
@@ -81,7 +84,6 @@
 
 		let hasError = false;
 
-		// Walidacja pola email
 		if (!email.value) {
 			emailError.value = "Email jest wymagany!";
 			hasError = true;
@@ -90,13 +92,11 @@
 			hasError = true;
 		}
 
-		// Walidacja pola imię
 		if (!name.value) {
 			nameError.value = "Imię jest wymagane!";
 			hasError = true;
 		}
 
-		// Walidacja pola hasło
 		if (!password.value) {
 			passwordError.value = "Hasło jest wymagane!";
 			hasError = true;
@@ -105,7 +105,6 @@
 			hasError = true;
 		}
 
-		// Walidacja pola potwierdzenie hasła
 		if (!confirmPassword.value) {
 			confirmPasswordError.value = "Potwierdzenie hasła jest wymagane!";
 			hasError = true;
@@ -114,11 +113,8 @@
 			hasError = true;
 		}
 
-		if (hasError) {
-			return;
-		}
+		if (hasError) return;
 
-		// Przygotowanie danych do wysłania
 		const payload = {
 			email: email.value,
 			password: password.value,
@@ -131,27 +127,21 @@
 			const response = await axios.post(
 				"https://mylovelyserver.fun:8443/pap_shopping_list/api/auth/register",
 				payload,
-				{
-					withCredentials: true, // Umożliwia wysyłanie ciasteczek
-				}
+				{ withCredentials: true }
 			);
 
 			if (response.status === 200) {
 				successMessage.value = `Rejestracja udana dla użytkownika: ${response.data.name}`;
-
-				// Automatyczne logowanie po rejestracji
 				await handleLogin(email.value, password.value);
 			}
 		} catch (error) {
 			if (error.response) {
-				// Błędy zwrócone przez serwer
 				if (error.response.status === 400) {
 					apiError.value = "Email jest już w użyciu.";
 				} else {
 					apiError.value = "Wystąpił błąd podczas rejestracji.";
 				}
 			} else {
-				// Błędy sieciowe
 				apiError.value = "Brak połączenia z serwerem.";
 			}
 		} finally {
@@ -159,32 +149,21 @@
 		}
 	};
 
-	// Funkcja do logowania użytkownika po rejestracji
 	const handleLogin = async (email, password) => {
 		try {
 			const response = await axios.post(
-				"/api/auth/login",
+				"https://mylovelyserver.fun:8443/pap_shopping_list/api/auth/login",
 				{ email, password },
-				{
-					withCredentials: true, // Umożliwia odbieranie ciasteczek z odpowiedzi
-				}
+				{ withCredentials: true }
 			);
 
 			if (response.status === 200) {
-				// Zakładam, że backend ustawia token w ciasteczku HttpOnly
-				// Możesz wyświetlić komunikat sukcesu lub przekierować użytkownika
 				router.push({ name: "Home" });
 			}
 		} catch (error) {
 			apiError.value =
 				"Automatyczne logowanie po rejestracji nie powiodło się.";
 		}
-	};
-
-	// Funkcja pomocnicza do walidacji email
-	const validateEmail = (email) => {
-		const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-		return re.test(email);
 	};
 </script>
 

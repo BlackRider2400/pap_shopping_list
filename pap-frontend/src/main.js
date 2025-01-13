@@ -11,7 +11,6 @@ import Cookies from "js-cookie"; // Dodano import js-cookie
 const app = createApp(App);
 
 // Ustawienie podstawowej ścieżki API
-axios.defaults.baseURL = "/api/auth";
 
 // Ustawienie Axios do wysyłania ciasteczek z żądaniami
 axios.defaults.withCredentials = true;

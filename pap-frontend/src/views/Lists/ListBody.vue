@@ -148,7 +148,13 @@
 		if (index !== -1) {
 			try {
 				await axios.delete(
-					`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/deleteItemById/${itemId}?userId=1`
+					`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/deleteItemById/${itemId}?userId=1`,
+					{
+						headers: {
+							"Content-Type": "application/json",
+						},
+						withCredentials: true,
+					}
 				);
 				list.value.items.splice(index, 1);
 				delete inputRefs[`text-${itemId}`];
@@ -170,6 +176,7 @@
 						headers: {
 							"Content-Type": "text/plain",
 						},
+						withCredentials: true,
 					}
 				);
 			} catch (error) {
@@ -185,6 +192,12 @@
 				{
 					data: item.text,
 					status: item.status,
+				},
+				{
+					headers: {
+						"Content-Type": "application/json",
+					},
+					withCredentials: true,
 				}
 			);
 			const newId = response.data.items[response.data.items.length - 1].id;
@@ -223,6 +236,7 @@
 					headers: {
 						"Content-Type": "text/plain",
 					},
+					withCredentials: true,
 				}
 			);
 		} catch (error) {
@@ -233,7 +247,14 @@
 	const changeItemStatus = async (item) => {
 		try {
 			await axios.put(
-				`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/changeStateOfItem/${item.id}?userId=1`
+				`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/changeStateOfItem/${item.id}?userId=1`,
+				null,
+				{
+					headers: {
+						"Content-Type": "application/json",
+					},
+					withCredentials: true,
+				}
 			);
 
 			if (!item.status) {
