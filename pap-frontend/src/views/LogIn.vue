@@ -72,21 +72,24 @@
 
 		if (hasError) return;
 
-		const payload = {
-			email: email.value,
-			password: password.value,
-		};
-
 		isLoading.value = true;
 
 		try {
 			const response = await axios.post(
 				"https://mylovelyserver.fun:8443/pap_shopping_list/api/auth/login",
-				payload,
-				{ withCredentials: true }
+				null,
+				{
+					params: {
+						email: email.value,
+						password: password.value,
+					},
+					withCredentials: false,
+				}
 			);
 
 			if (response.status === 200) {
+				// Ustawienie stanu logowania w localStorage
+				localStorage.setItem("isAuthenticated", "true");
 				router.push({ name: "Home" });
 			}
 		} catch (error) {

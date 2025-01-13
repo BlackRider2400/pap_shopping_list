@@ -18,6 +18,7 @@
 					<li>
 						<router-link to="/lists">Listy Zakupowe</router-link>
 					</li>
+					<li @click="handleLogout">Logout</li>
 				</ul>
 			</div>
 			<div class="footer-section">
@@ -36,6 +37,14 @@
 </template>
 
 <script setup>
+	import { useRouter } from "vue-router";
+
+	const router = useRouter();
+
+	const handleLogout = () => {
+		localStorage.removeItem("isAuthenticated");
+		router.push({ name: "LogIn" });
+	};
 </script>
 
 <style scoped lang="scss">

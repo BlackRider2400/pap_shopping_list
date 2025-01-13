@@ -127,7 +127,7 @@
 			const response = await axios.post(
 				"https://mylovelyserver.fun:8443/pap_shopping_list/api/auth/register",
 				payload,
-				{ withCredentials: true }
+				{ withCredentials: false }
 			);
 
 			if (response.status === 200) {
@@ -149,20 +149,29 @@
 		}
 	};
 
-	const handleLogin = async (email, password) => {
+	const handleLogin = async () => {
 		try {
 			const response = await axios.post(
 				"https://mylovelyserver.fun:8443/pap_shopping_list/api/auth/login",
-				{ email, password },
-				{ withCredentials: true }
+				null,
+				{
+					params: {
+						email: email.value,
+						password: password.value,
+					},
+					withCredentials: false,
+				}
 			);
 
 			if (response.status === 200) {
+				// Ustawienie stanu logowania w localStorage
+				localStorage.setItem("isAuthenticated", "true");
 				router.push({ name: "Home" });
 			}
 		} catch (error) {
-			apiError.value =
-				"Automatyczne logowanie po rejestracji nie powiodło się.";
+			apiError.value = "Auto Login nie udał się.";
+		} finally {
+			isLoading.value = false;
 		}
 	};
 </script>

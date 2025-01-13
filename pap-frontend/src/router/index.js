@@ -45,11 +45,9 @@ const router = createRouter({
 // Globalny strażnik nawigacyjny
 router.beforeEach((to, from, next) => {
 	const requiresAuth = to.matched.some((record) => record.meta.requiresAuth);
+	const isAuthenticated = localStorage.getItem("isAuthenticated") === "true";
 
-	// Sprawdzenie obecności tokenu w ciasteczkach
-	const token = Cookies.get("authToken"); // Nazwa ciasteczka zależy od konfiguracji backendu
-
-	if (requiresAuth && !token) {
+	if (requiresAuth && !isAuthenticated) {
 		next({ name: "LogIn" });
 	} else {
 		next();
