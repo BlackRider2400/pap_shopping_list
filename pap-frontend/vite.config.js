@@ -9,13 +9,4 @@ export default defineConfig({
 			"@": fileURLToPath(new URL("./src", import.meta.url)),
 		},
 	},
-	server: {
-		proxy: {
-			"/api": {
-				target: "https://mylovelyserver.fun:8443/pap_shopping_list",
-				changeOrigin: true,
-				secure: false, // Jeśli serwer używa HTTPS z własnym certyfikatem
-			},
-		},
-	},
 });

@@ -129,7 +129,7 @@
 
 		try {
 			const response = await axios.post(
-				"https://mylovelyserver.fun:8443/pap_shopping_list/api/register",
+				"https://mylovelyserver.fun:8443/pap_shopping_list/api/auth/register",
 				payload,
 				{
 					withCredentials: true, // Umożliwia wysyłanie ciasteczek
