@@ -27,14 +27,11 @@ public class User {
     @Column(unique = true, nullable = false)
     private String email;
 
-    @JsonIgnore
     private String password;
 
     @Column(unique = true)
-    @JsonIgnore
     private String resetToken;
 
-    @JsonIgnore
     private LocalDateTime resetTokenExpiry;
 
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL)

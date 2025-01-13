@@ -24,12 +24,12 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<User> registerUser(@RequestBody User newUser) {
+    public ResponseEntity<String> registerUser(@RequestBody User newUser) {
         if (dbService.getUserByEmail(newUser.getEmail()).isPresent()) {
             return ResponseEntity.badRequest().body(null);
         }
         newUser.setPassword(passwordEncoder.encode(newUser.getPassword()));
-        return ResponseEntity.ok(dbService.saveUser(newUser));
+        return ResponseEntity.ok("Register successful");
     }
 
     @PostMapping("/login")
