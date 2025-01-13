@@ -3,11 +3,19 @@
 		<h1>Rejestracja</h1>
 		<form @submit.prevent="handleRegister">
 			<Input
-				id="username"
-				label="Login:"
-				placeholder="Wprowadź login"
-				v-model="username"
-				:errorMessage="usernameError"
+				id="email"
+				label="Email:"
+				type="email"
+				placeholder="Wprowadź email"
+				v-model="email"
+				:errorMessage="emailError"
+			/>
+			<Input
+				id="name"
+				label="Imię:"
+				placeholder="Wprowadź swoje imię"
+				v-model="name"
+				:errorMessage="nameError"
 			/>
 			<Input
 				id="password"
@@ -25,67 +33,162 @@
 				v-model="confirmPassword"
 				:errorMessage="confirmPasswordError"
 			/>
+			<div class="error-message" v-if="apiError">
+				{{ apiError }}
+			</div>
 			<div class="success-message" v-if="successMessage">
 				{{ successMessage }}
 			</div>
-			<Button type="primary" @click="handleRegister">Zarejestruj</Button>
+			<Button type="primary" :disabled="isLoading">
+				{{ isLoading ? "Rejestrowanie..." : "Zarejestruj" }}
+			</Button>
 		</form>
 	</div>
 </template>
 
-<script setup>
+  <script setup>
 	import { ref } from "vue";
+	import { useRouter } from "vue-router";
+	import axios from "axios";
+	import Cookies from "js-cookie";
 	import Input from "../components/Input.vue";
 	import Button from "../components/Button.vue";
 
-	const username = ref("");
+	const email = ref("");
+	const name = ref("");
 	const password = ref("");
 	const confirmPassword = ref("");
 
-	const usernameError = ref("");
+	const emailError = ref("");
+	const nameError = ref("");
 	const passwordError = ref("");
 	const confirmPasswordError = ref("");
+	const apiError = ref("");
 	const successMessage = ref("");
 
-	const handleRegister = () => {
+	const isLoading = ref(false);
+
+	const router = useRouter();
+
+	const handleRegister = async () => {
+		// Resetowanie komunikatów błędów
+		emailError.value = "";
+		nameError.value = "";
+		passwordError.value = "";
+		confirmPasswordError.value = "";
+		apiError.value = "";
+		successMessage.value = "";
+
 		let hasError = false;
 
-		if (!username.value) {
-			usernameError.value = "Login jest wymagany!";
+		// Walidacja pola email
+		if (!email.value) {
+			emailError.value = "Email jest wymagany!";
 			hasError = true;
-		} else {
-			usernameError.value = "";
+		} else if (!validateEmail(email.value)) {
+			emailError.value = "Nieprawidłowy format email!";
+			hasError = true;
 		}
 
+		// Walidacja pola imię
+		if (!name.value) {
+			nameError.value = "Imię jest wymagane!";
+			hasError = true;
+		}
+
+		// Walidacja pola hasło
 		if (!password.value) {
 			passwordError.value = "Hasło jest wymagane!";
 			hasError = true;
 		} else if (password.value.length < 6) {
 			passwordError.value = "Hasło musi mieć co najmniej 6 znaków!";
 			hasError = true;
-		} else {
-			passwordError.value = "";
 		}
 
+		// Walidacja pola potwierdzenie hasła
 		if (!confirmPassword.value) {
 			confirmPasswordError.value = "Potwierdzenie hasła jest wymagane!";
 			hasError = true;
 		} else if (password.value !== confirmPassword.value) {
 			confirmPasswordError.value = "Hasła nie są zgodne!";
 			hasError = true;
-		} else {
-			confirmPasswordError.value = "";
 		}
 
 		if (hasError) {
 			return;
 		}
 
-		successMessage.value = `Rejestracja udana dla użytkownika: ${username.value}`;
+		// Przygotowanie danych do wysłania
+		const payload = {
+			email: email.value,
+			password: password.value,
+			name: name.value,
+		};
+
+		isLoading.value = true;
+
+		try {
+			const response = await axios.post(
+				"https://mylovelyserver.fun:8443/pap_shopping_list/api/register",
+				payload,
+				{
+					withCredentials: true, // Umożliwia wysyłanie ciasteczek
+				}
+			);
+
+			if (response.status === 200) {
+				successMessage.value = `Rejestracja udana dla użytkownika: ${response.data.name}`;
+
+				// Automatyczne logowanie po rejestracji
+				await handleLogin(email.value, password.value);
+			}
+		} catch (error) {
+			if (error.response) {
+				// Błędy zwrócone przez serwer
+				if (error.response.status === 400) {
+					apiError.value = "Email jest już w użyciu.";
+				} else {
+					apiError.value = "Wystąpił błąd podczas rejestracji.";
+				}
+			} else {
+				// Błędy sieciowe
+				apiError.value = "Brak połączenia z serwerem.";
+			}
+		} finally {
+			isLoading.value = false;
+		}
+	};
+
+	// Funkcja do logowania użytkownika po rejestracji
+	const handleLogin = async (email, password) => {
+		try {
+			const response = await axios.post(
+				"/api/auth/login",
+				{ email, password },
+				{
+					withCredentials: true, // Umożliwia odbieranie ciasteczek z odpowiedzi
+				}
+			);
+
+			if (response.status === 200) {
+				// Zakładam, że backend ustawia token w ciasteczku HttpOnly
+				// Możesz wyświetlić komunikat sukcesu lub przekierować użytkownika
+				router.push({ name: "Home" });
+			}
+		} catch (error) {
+			apiError.value =
+				"Automatyczne logowanie po rejestracji nie powiodło się.";
+		}
+	};
+
+	// Funkcja pomocnicza do walidacji email
+	const validateEmail = (email) => {
+		const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+		return re.test(email);
 	};
 </script>
 
-<style scoped lang="scss">
+  <style scoped lang="scss">
 	#register-container {
 		max-width: 400px;
 		margin: 50px auto;
@@ -102,10 +205,17 @@
 		margin-bottom: 20px;
 	}
 
+	.error-message {
+		color: red;
+		font-size: 14px;
+		margin-top: 10px;
+		text-align: center;
+	}
+
 	.success-message {
 		color: green;
 		font-size: 14px;
-		margin-top: 15px;
+		margin-top: 10px;
 		text-align: center;
 	}
 </style>

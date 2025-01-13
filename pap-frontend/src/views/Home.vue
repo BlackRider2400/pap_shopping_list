@@ -29,8 +29,8 @@
 			</div>
 		</section>
 
-		<div ref="threeContainer" class="three-container"></div>
-		<div ref="threeContainerSecond" class="three-container"></div>
+		<!-- <div ref="threeContainer" class="three-container"></div>
+		<div ref="threeContainerSecond" class="three-container"></div> -->
 
 		<section class="cta">
 			<h2>Dołącz do tysięcy zadowolonych użytkowników!</h2>

@@ -3,11 +3,12 @@
 		<h1>Logowanie</h1>
 		<form @submit.prevent="handleLogin">
 			<Input
-				id="username"
-				label="Login:"
-				placeholder="Wprowadź login"
-				v-model="username"
-				:errorMessage="usernameError"
+				id="email"
+				label="Email:"
+				type="email"
+				placeholder="Wprowadź email"
+				v-model="email"
+				:errorMessage="emailError"
 			/>
 			<Input
 				id="password"
@@ -17,46 +18,101 @@
 				v-model="password"
 				:errorMessage="passwordError"
 			/>
-			<Button type="primary" @click="handleLogin">Zaloguj</Button>
+			<div class="error-message" v-if="apiError">
+				{{ apiError }}
+			</div>
+			<Button type="primary" :disabled="isLoading">
+				{{ isLoading ? "Logowanie..." : "Zaloguj" }}
+			</Button>
 		</form>
 	</div>
 </template>
 
-<script setup>
+  <script setup>
 	import { ref } from "vue";
+	import { useRouter } from "vue-router";
+	import axios from "axios";
+	import Cookies from "js-cookie";
 	import Input from "../components/Input.vue";
 	import Button from "../components/Button.vue";
 
-	const username = ref("");
+	const email = ref("");
 	const password = ref("");
 
-	const usernameError = ref("");
+	const emailError = ref("");
 	const passwordError = ref("");
+	const apiError = ref("");
 
-	const handleLogin = () => {
+	const isLoading = ref(false);
+
+	const router = useRouter();
+
+	const handleLogin = async () => {
+		// Resetowanie komunikatów błędów
+		emailError.value = "";
+		passwordError.value = "";
+		apiError.value = "";
+
 		let hasError = false;
 
-		if (!username.value) {
-			usernameError.value = "Login jest wymagany!";
+		// Walidacja pola email
+		if (!email.value) {
+			emailError.value = "Email jest wymagany!";
 			hasError = true;
-		} else {
-			usernameError.value = "";
+		} else if (!validateEmail(email.value)) {
+			emailError.value = "Nieprawidłowy format email!";
+			hasError = true;
 		}
 
+		// Walidacja pola hasło
 		if (!password.value) {
 			passwordError.value = "Hasło jest wymagane!";
 			hasError = true;
-		} else {
-			passwordError.value = "";
 		}
 
 		if (hasError) return;
 
-		alert(`Zalogowano jako: ${username.value}`);
+		// Przygotowanie danych do wysłania
+		const payload = {
+			email: email.value,
+			password: password.value,
+		};
+
+		isLoading.value = true;
+
+		try {
+			const response = await axios.post("/api/auth/login", payload, {
+				withCredentials: true, // Umożliwia odbieranie ciasteczek z odpowiedzi
+			});
+
+			if (response.status === 200) {
+				// Zakładam, że backend ustawia token w ciasteczku HttpOnly
+				// Możesz wyświetlić komunikat sukcesu lub przekierować użytkownika
+				router.push({ name: "Home" });
+			}
+		} catch (error) {
+			if (error.response) {
+				if (error.response.status === 401) {
+					apiError.value = "Nieprawidłowe dane logowania.";
+				} else {
+					apiError.value = "Wystąpił błąd podczas logowania.";
+				}
+			} else {
+				apiError.value = "Brak połączenia z serwerem.";
+			}
+		} finally {
+			isLoading.value = false;
+		}
+	};
+
+	// Funkcja pomocnicza do walidacji email
+	const validateEmail = (email) => {
+		const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+		return re.test(email);
 	};
 </script>
 
-<style scoped lang="scss">
+  <style scoped lang="scss">
 	#login-container {
 		max-width: 400px;
 		margin: 50px auto;
@@ -73,10 +129,17 @@
 		margin-bottom: 20px;
 	}
 
+	.error-message {
+		color: red;
+		font-size: 14px;
+		margin-top: 10px;
+		text-align: center;
+	}
+
 	.success-message {
 		color: green;
 		font-size: 14px;
-		margin-top: 15px;
+		margin-top: 10px;
 		text-align: center;
 	}
 </style>
