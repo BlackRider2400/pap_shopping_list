@@ -51,6 +51,7 @@
 	};
 
 	const handleLogin = async () => {
+		// Resetowanie komunikatów błędów
 		emailError.value = "";
 		passwordError.value = "";
 		apiError.value = "";
@@ -88,9 +89,10 @@
 			);
 
 			if (response.status === 200) {
-				// Ustawienie stanu logowania w localStorage
 				localStorage.setItem("isAuthenticated", "true");
-				router.push({ name: "Home" });
+				localStorage.setItem("authEmail", email.value);
+				localStorage.setItem("authPassword", password.value);
+				router.push({ name: "Lists" });
 			}
 		} catch (error) {
 			if (error.response) {
@@ -108,7 +110,7 @@
 	};
 </script>
 
-  <style scoped lang="scss">
+<style scoped lang="scss">
 	#login-container {
 		max-width: 400px;
 		margin: 50px auto;

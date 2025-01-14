@@ -49,19 +49,25 @@
 
 	const addList = async () => {
 		try {
+			const email = localStorage.getItem("authEmail");
+			const password = localStorage.getItem("authPassword");
+			const credentials = btoa(`${email}:${password}`);
+
 			const response = await axios.post(
 				"https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/addNewList",
-				{ name: "Nowa Lista" },
+				null,
 				{
 					params: {
-						userId: 1,
+						name: "Nowa Lista",
 					},
 					headers: {
 						"Content-Type": "application/json",
+						Authorization: `Basic ${credentials}`,
 					},
 					withCredentials: true,
 				}
 			);
+
 			toast.success("Lista została dodana.");
 			await fetchDataFromApi();
 			const newList = lists.lists.find((list) => list.name === "Nowa Lista");
@@ -91,6 +97,8 @@
 			console.error("Error deleting list:", error);
 		}
 	};
+
+	fetchDataFromApi();
 </script>
 
 <style scoped lang="scss">

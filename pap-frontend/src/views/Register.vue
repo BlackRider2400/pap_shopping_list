@@ -149,24 +149,25 @@
 		}
 	};
 
-	const handleLogin = async () => {
+	const handleLogin = async (emailArg, passwordArg) => {
 		try {
 			const response = await axios.post(
 				"https://mylovelyserver.fun:8443/pap_shopping_list/api/auth/login",
 				null,
 				{
 					params: {
-						email: email.value,
-						password: password.value,
+						email: emailArg,
+						password: passwordArg,
 					},
 					withCredentials: false,
 				}
 			);
 
 			if (response.status === 200) {
-				// Ustawienie stanu logowania w localStorage
 				localStorage.setItem("isAuthenticated", "true");
-				router.push({ name: "Home" });
+				localStorage.setItem("authEmail", emailArg);
+				localStorage.setItem("authPassword", passwordArg);
+				router.push({ name: "Lists" });
 			}
 		} catch (error) {
 			apiError.value = "Auto Login nie udał się.";
@@ -176,7 +177,7 @@
 	};
 </script>
 
-  <style scoped lang="scss">
+<style scoped lang="scss">
 	#register-container {
 		max-width: 400px;
 		margin: 50px auto;

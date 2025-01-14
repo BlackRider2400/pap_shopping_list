@@ -20,8 +20,10 @@
 	const fetchDataFromApi = async () => {
 		try {
 			const endpoint =
-				"https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/getAllLists?userId=1";
-			const response = await axios.get(endpoint);
+				"https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/getAllLists";
+			const response = await axios.get(endpoint, {
+				withCredentials: true,
+			});
 			lists.updateFromJSON(response.data);
 			console.log(
 				"Dane pobrane i zaktualizowane:",
@@ -32,7 +34,7 @@
 		}
 	};
 
-	fetchDataFromApi();
+	//fetchDataFromApi();
 	provide("lists", lists);
 	provide("fetchDataFromApi", fetchDataFromApi);
 </script>

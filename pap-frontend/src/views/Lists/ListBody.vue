@@ -86,7 +86,6 @@
 	</div>
 </template>
 
-
 <script setup>
 	import { defineProps, inject, computed, nextTick, reactive } from "vue";
 	import "@fortawesome/fontawesome-free/css/all.css";
@@ -104,8 +103,18 @@
 	});
 
 	const lists = inject("lists");
-
 	const toast = useToast();
+
+	const getAuthHeaders = () => {
+		const email = localStorage.getItem("authEmail");
+		const password = localStorage.getItem("authPassword");
+		let headers = { "Content-Type": "application/json" };
+		if (email && password) {
+			const credentials = btoa(`${email}:${password}`);
+			headers.Authorization = `Basic ${credentials}`;
+		}
+		return headers;
+	};
 
 	const list = computed(() => {
 		const listId = Number(props.id);
@@ -119,7 +128,6 @@
 	};
 
 	const addItem = async () => {
-		//TODO: units, amount
 		if (list.value) {
 			const tempId = Date.now();
 			const newItem = new Item(null, "", false, "sztuki", 1);
@@ -148,11 +156,9 @@
 		if (index !== -1) {
 			try {
 				await axios.delete(
-					`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/deleteItemById/${itemId}?userId=1`,
+					`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/deleteItemById/${itemId}`,
 					{
-						headers: {
-							"Content-Type": "application/json",
-						},
+						headers: getAuthHeaders(),
 						withCredentials: true,
 					}
 				);
@@ -170,11 +176,12 @@
 		if (list.value) {
 			try {
 				await axios.put(
-					`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/renameList/${list.value.id}?userId=1`,
+					`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/renameList/${list.value.id}`,
 					list.value.name,
 					{
 						headers: {
 							"Content-Type": "text/plain",
+							...getAuthHeaders(),
 						},
 						withCredentials: true,
 					}
@@ -188,15 +195,13 @@
 	const saveNewItem = async (item) => {
 		try {
 			const response = await axios.post(
-				`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/addNewItem/${list.value.id}?userId=1`,
+				`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/addNewItem/${list.value.id}`,
 				{
 					data: item.text,
 					status: item.status,
 				},
 				{
-					headers: {
-						"Content-Type": "application/json",
-					},
+					headers: getAuthHeaders(),
 					withCredentials: true,
 				}
 			);
@@ -230,11 +235,12 @@
 
 		try {
 			await axios.put(
-				`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/changeValueOfItem/${item.id}?userId=1`,
+				`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/changeValueOfItem/${item.id}`,
 				item.text,
 				{
 					headers: {
 						"Content-Type": "text/plain",
+						...getAuthHeaders(),
 					},
 					withCredentials: true,
 				}
@@ -247,12 +253,10 @@
 	const changeItemStatus = async (item) => {
 		try {
 			await axios.put(
-				`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/changeStateOfItem/${item.id}?userId=1`,
+				`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/changeStateOfItem/${item.id}`,
 				null,
 				{
-					headers: {
-						"Content-Type": "application/json",
-					},
+					headers: getAuthHeaders(),
 					withCredentials: true,
 				}
 			);
@@ -265,6 +269,7 @@
 		}
 	};
 </script>
+
 <style scoped lang="scss">
 	:root {
 		--primary-color: #007bff;
