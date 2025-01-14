@@ -17,7 +17,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/lists")
-@CrossOrigin(origins = "*")
 public class PapShoppingListController {
 
     private final DbService dbService;
