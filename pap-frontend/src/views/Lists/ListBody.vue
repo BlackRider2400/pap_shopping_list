@@ -78,6 +78,9 @@
 		<section class="list-info">
 			<p>Owner: {{ list.owner }}</p>
 			<p>Users: {{ list.users.map((user) => user).join(", ") }}</p>
+			<Button class="add-item-button" @click="shareWith"
+				>Udostępnij</Button
+			>
 		</section>
 	</div>
 
@@ -92,8 +95,8 @@
 	import Button from "@/components/Button.vue";
 	import Input from "@/components/Input.vue";
 	import { Item } from "@/models/Item";
-	import { useToast } from "vue-toastification";
 	import axios from "axios";
+	import { useToast } from "vue-toastification";
 
 	const props = defineProps({
 		id: {
@@ -115,6 +118,7 @@
 		}
 		return headers;
 	};
+	console.log(getAuthHeaders());
 
 	const list = computed(() => {
 		const listId = Number(props.id);
@@ -175,13 +179,18 @@
 	const renameList = async () => {
 		if (list.value) {
 			try {
+				const email = localStorage.getItem("authEmail");
+				const password = localStorage.getItem("authPassword");
+				const credentials = btoa(`${email}:${password}`);
+				const auth = `Basic ${credentials}`;
+
 				await axios.put(
 					`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/renameList/${list.value.id}`,
 					list.value.name,
 					{
 						headers: {
 							"Content-Type": "text/plain",
-							...getAuthHeaders(),
+							Authorization: auth,
 						},
 						withCredentials: true,
 					}
@@ -267,6 +276,27 @@
 		} catch (error) {
 			console.error("Error changing item status:", error);
 		}
+	};
+
+	const shareWith = async (user = "krzysztof@baralkiewicz.pl") => {
+		try {
+			await axios.post(
+				`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/addSharedUser/${list.value.id}`,
+				user,
+				{
+					headers: {
+						"Content-Type": "text/plain",
+						...getAuthHeaders(),
+					},
+					withCredentials: true,
+				}
+			);
+		} catch (error) {
+			console.error("Error trying to share this list", error);
+		}
+		// Odśwież dane po udostępnieniu
+		// Jeśli fetchDataFromApi jest dostępne przez inject, można je tutaj wywołać
+		// fetchDataFromApi();
 	};
 </script>
 

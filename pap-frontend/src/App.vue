@@ -25,10 +25,10 @@
 				withCredentials: true,
 			});
 			lists.updateFromJSON(response.data);
-			console.log(
-				"Dane pobrane i zaktualizowane:",
-				JSON.stringify(lists, null, 2)
-			);
+			// console.log(
+			// 	"Dane pobrane i zaktualizowane:",
+			// 	JSON.stringify(lists, null, 2)
+			// );
 		} catch (error) {
 			console.error("Błąd podczas pobierania danych z API:", error);
 		}

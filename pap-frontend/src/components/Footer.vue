@@ -18,7 +18,7 @@
 					<li>
 						<router-link to="/lists">Listy Zakupowe</router-link>
 					</li>
-					<li @click="handleLogout">Logout</li>
+					<li @click="handleLogout" class="pointer-class">Logout</li>
 				</ul>
 			</div>
 			<div class="footer-section">
@@ -43,6 +43,8 @@
 
 	const handleLogout = () => {
 		localStorage.removeItem("isAuthenticated");
+		localStorage.removeItem("authEmail");
+		localStorage.removeItem("authPassword");
 		router.push({ name: "LogIn" });
 	};
 </script>
@@ -79,6 +81,10 @@
 				ul {
 					list-style: none;
 					padding: 0;
+
+					li.pointer-class {
+						cursor: pointer;
+					}
 
 					li {
 						margin: 5px 0;

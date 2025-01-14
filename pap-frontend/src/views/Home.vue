@@ -2,16 +2,42 @@
 	<div id="home-page">
 		<section class="hero">
 			<div class="hero-content">
-				<h1>Lista zakupowa zawsze pod ręką</h1>
-				<p>
-					Zarządzaj swoimi zakupami w prosty i intuicyjny sposób.
-					Twórz listy, udostępniaj je innym i synchronizuj w czasie
-					rzeczywistym.
-				</p>
-				<Button class="cta-button" @click="navigateToLists"
-					>Rozpocznij teraz</Button
-				>
+				<h1>
+					Też masz czasem tak, że idziesz na zakupy, ale zapominasz,
+					co chciałeś kupić?
+				</h1>
+				<h2>
+					Zwykle kończy się to tym, że przypomnisz sobie o tym dopiero
+					po powrocie do domu...
+				</h2>
 			</div>
+		</section>
+		<section class="features">
+			<h2>Możesz zrobić kilka rzeczy.</h2>
+			<div class="features-container">
+				<div
+					class="feature-item"
+					v-for="amplify in amplifies"
+					:key="amplify.id"
+				>
+					<i :class="amplify.icon" class="feature-icon"></i>
+					<h3>{{ amplify.title }}</h3>
+					<p>{{ amplify.description }}</p>
+				</div>
+			</div>
+			<p>Właśnie dlatego stworzyliśmy Listę Zakupową 2000!</p>
+			<p>
+				Od teraz, kiedy nie chcesz o czymś zapomnieć, możesz to sobie
+				zapisać!
+			</p>
+			<h2>
+				Ta przełomowa metoda opracowana przez naszych najlepszych
+				naukowców z działu R&B sprawiła, że wielu ludzi, robiących na co
+				dzień zakupy, odwróciło swoje życie o 360 stopni!
+			</h2>
+			<Button class="cta-button" @click="navigateToLists"
+				>Rozpocznij teraz</Button
+			>
 		</section>
 
 		<section class="features">
@@ -56,6 +82,23 @@
 	import getStarfield from "./getStarfield.js";
 	import spline from "./spline.js";
 	import { update } from "three/examples/jsm/libs/tween.module.js";
+
+	const amplifies = [
+		{
+			id: 1,
+			icon: "fa-solid fa-list-check",
+			title: "Ucz się na pamięć",
+			description:
+				"Przed pójściem na zakupy uczyć się na pamięć tego, czego potrzebujesz.<br />Jednak to rozwiązanie jest dość niewygodne i zajmuje sporo	czasu.",
+		},
+		{
+			id: 2,
+			icon: "fa-solid fa-share-nodes",
+			title: "Zatrudnij kogoś",
+			description:
+				"Możesz też zapłacić komuś, żeby myślał za Ciebie.<br />Niestety, nie każdy może sobie na to pozwolić.",
+		},
+	];
 
 	const features = [
 		{
