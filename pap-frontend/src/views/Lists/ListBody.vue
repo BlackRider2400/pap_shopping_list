@@ -118,7 +118,6 @@
 		}
 		return headers;
 	};
-	console.log(getAuthHeaders());
 
 	const list = computed(() => {
 		const listId = Number(props.id);
@@ -178,19 +177,15 @@
 
 	const renameList = async () => {
 		if (list.value) {
+			console.log(list.value.name);
 			try {
-				const email = localStorage.getItem("authEmail");
-				const password = localStorage.getItem("authPassword");
-				const credentials = btoa(`${email}:${password}`);
-				const auth = `Basic ${credentials}`;
-
-				await axios.put(
+				const response = await axios.put(
 					`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/renameList/${list.value.id}`,
 					list.value.name,
 					{
 						headers: {
 							"Content-Type": "text/plain",
-							Authorization: auth,
+							...getAuthHeaders(),
 						},
 						withCredentials: true,
 					}
