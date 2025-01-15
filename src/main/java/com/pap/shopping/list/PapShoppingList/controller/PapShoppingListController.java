@@ -187,6 +187,7 @@ public class PapShoppingListController {
         Map<String, Object> response = new HashMap<>();
         response.put("id", shoppingList.getId());
         response.put("name", shoppingList.getName());
+        response.put("owner", shoppingList.getOwner().getEmail());
         response.put("sharedUsers", shoppingList.getSharedUsers().stream()
                 .map(user -> Map.of("email", user.getEmail()))
                 .toList());
