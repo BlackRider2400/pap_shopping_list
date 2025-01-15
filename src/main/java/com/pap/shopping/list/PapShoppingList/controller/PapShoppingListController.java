@@ -17,6 +17,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/lists")
+@CrossOrigin(origins = "*")
 public class PapShoppingListController {
 
     private final DbService dbService;
@@ -108,6 +109,20 @@ public class PapShoppingListController {
         if (canAccessList(dbService.getListIdByItemId(id), userId)) {
             return dbService.getItemByIdAndUserId(id, userId).map(item -> {
                 item.setStatus(!item.getStatus());
+                return ResponseEntity.ok(dbService.saveItem(item));
+            }).orElse(ResponseEntity.notFound().build());
+        }
+        return ResponseEntity.status(403).build();
+    }
+
+    @PutMapping("/changeItem/{id}")
+    public ResponseEntity<Item> changeItem(@PathVariable Long id, @RequestBody Item newItem) {
+        Long userId = getCurrentUserId();
+        if (canAccessList(dbService.getListIdByItemId(id), userId)) {
+            return dbService.getItemByIdAndUserId(id, userId).map(item -> {
+                item.setData(newItem.getData());
+                item.setQuantity(newItem.getQuantity());
+                item.setUnit(newItem.getUnit());
                 return ResponseEntity.ok(dbService.saveItem(item));
             }).orElse(ResponseEntity.notFound().build());
         }
