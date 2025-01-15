@@ -130,7 +130,7 @@ public class PapShoppingListController {
     }
 
     @PutMapping("/renameList/{id}")
-    public ResponseEntity<Map<String, Object>> renameList(@PathVariable Long id, @RequestBody String newName) {
+    public ResponseEntity<Map<String, Object>> renameList(@PathVariable Long id, @RequestParam String newName) {
         Long userId = getCurrentUserId();
         if (dbService.isOwnerOfList(id, userId)) {
             return dbService.getShoppingListByIdAndUserId(id, userId).map(list -> {

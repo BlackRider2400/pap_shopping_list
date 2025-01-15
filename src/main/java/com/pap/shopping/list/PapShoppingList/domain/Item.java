@@ -22,9 +22,8 @@ public class Item {
     @Column(nullable = true)
     private Double quantity;
 
-    @Enumerated(EnumType.STRING)
     @Column(nullable = true)
-    private Unit unit;
+    private String unit;
 
     @ManyToOne
     @JsonIgnore
