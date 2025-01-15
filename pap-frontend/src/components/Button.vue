@@ -14,10 +14,10 @@
 		},
 	});
 
-	const emit = defineEmits(["click"]); // Przypisanie defineEmits do zmiennej emit
+	const emit = defineEmits(["click"]);
 
 	const handleClick = (event) => {
-		emit("click", event); // Teraz emit jest zdefiniowany
+		emit("click", event);
 	};
 </script>
 

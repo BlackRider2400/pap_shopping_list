@@ -6,7 +6,9 @@ export class List {
 		this.id = id;
 		this.name = name;
 		this.items = reactive(
-			items.map((itemData) => new Item(itemData.id, itemData.data || itemData.text, itemData.status))
+			items.map(
+				(itemData) => new Item(itemData.id, itemData.data, itemData.status, itemData.unit, itemData.quantity)
+			)
 		);
 		this.owner = owner;
 		this.users = reactive(users);

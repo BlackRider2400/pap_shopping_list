@@ -74,7 +74,6 @@
 	};
 
 	const handleRegister = async () => {
-		// Resetowanie komunikatów błędów
 		emailError.value = "";
 		nameError.value = "";
 		passwordError.value = "";

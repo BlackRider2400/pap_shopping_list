@@ -29,7 +29,7 @@
 
 						<Input
 							class="input-text"
-							v-model="item.text"
+							v-model="item.data"
 							:id="item.id ? item.id.toString() : ''"
 							placeholder="Enter item name"
 							mode="p"
@@ -52,13 +52,14 @@
 						<Input
 							class="input-amount"
 							type="number"
-							v-model="item.amount"
+							v-model="item.quantity"
 							:id="item.id ? item.id.toString() : ''"
 							placeholder="Amount"
 							mode="p"
 							:disabled="item.status"
 							:ref="setInputRef(item.id || item.tempId, 'amount')"
 							@blur="updateItem(item)"
+							@change="updateItem(item)"
 						/>
 					</div>
 					<div class="item-actions">
@@ -187,6 +188,9 @@
 							"Content-Type": "text/plain",
 							...getAuthHeaders(),
 						},
+						params: {
+							newName: list.value.name,
+						},
 						withCredentials: true,
 					}
 				);
@@ -201,7 +205,7 @@
 			const response = await axios.post(
 				`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/addNewItem/${list.value.id}`,
 				{
-					data: item.text,
+					data: item.data,
 					status: item.status,
 				},
 				{
@@ -231,19 +235,19 @@
 			return;
 		}
 
-		if (!item.text.trim()) {
+		if (!item.data.trim()) {
 			console.warn("Item text is empty. Removing the item.");
 			await removeItem(item.id);
 			return;
 		}
 
 		try {
-			await axios.put(
-				`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/changeValueOfItem/${item.id}`,
-				item.text,
+			const response = await axios.put(
+				`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/changeItem/${item.id}`,
+				item,
 				{
 					headers: {
-						"Content-Type": "text/plain",
+						"Content-Type": "application/json",
 						...getAuthHeaders(),
 					},
 					withCredentials: true,
@@ -273,11 +277,11 @@
 		}
 	};
 
-	const shareWith = async (user = "krzysztof@baralkiewicz.pl") => {
+	const shareWith = async (user = "rafalmironko@gmail.com") => {
 		try {
 			await axios.post(
 				`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/addSharedUser/${list.value.id}`,
-				user,
+				"krzysztof@baralkiewicz.pl",
 				{
 					headers: {
 						"Content-Type": "text/plain",
@@ -289,9 +293,6 @@
 		} catch (error) {
 			console.error("Error trying to share this list", error);
 		}
-		// Odśwież dane po udostępnieniu
-		// Jeśli fetchDataFromApi jest dostępne przez inject, można je tutaj wywołać
-		// fetchDataFromApi();
 	};
 </script>
 

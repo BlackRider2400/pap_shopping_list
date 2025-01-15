@@ -21,20 +21,13 @@
 		try {
 			const endpoint =
 				"https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/getAllLists";
-			const response = await axios.get(endpoint, {
-				withCredentials: true,
-			});
+			const response = await axios.get(endpoint, { withCredentials: true });
 			lists.updateFromJSON(response.data);
-			// console.log(
-			// 	"Dane pobrane i zaktualizowane:",
-			// 	JSON.stringify(lists, null, 2)
-			// );
 		} catch (error) {
 			console.error("Błąd podczas pobierania danych z API:", error);
 		}
 	};
 
-	//fetchDataFromApi();
 	provide("lists", lists);
 	provide("fetchDataFromApi", fetchDataFromApi);
 </script>

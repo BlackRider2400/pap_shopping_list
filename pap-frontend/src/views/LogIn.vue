@@ -51,7 +51,6 @@
 	};
 
 	const handleLogin = async () => {
-		// Resetowanie komunikatów błędów
 		emailError.value = "";
 		passwordError.value = "";
 		apiError.value = "";

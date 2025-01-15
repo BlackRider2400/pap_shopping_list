@@ -1,9 +1,9 @@
 export class Item {
-	constructor(id, text, status = true, unit = "sztuki", amount = 1) {
+	constructor(id, data, status = true, unit = "sztuki", quantity = 1.0) {
 		this.id = id;
-		this.text = text;
+		this.data = data;
 		this.status = status;
 		this.unit = unit;
-		this.amount = amount;
+		this.quantity = quantity;
 	}
 }
