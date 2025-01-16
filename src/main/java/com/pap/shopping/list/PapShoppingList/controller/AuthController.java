@@ -28,6 +28,9 @@ public class AuthController {
             return ResponseEntity.badRequest().body(null);
         }
         newUser.setPassword(passwordEncoder.encode(newUser.getPassword()));
+        newUser.setResetToken(null);
+        newUser.setResetTokenExpiry(null);
+        dbService.saveUser(newUser);
         return ResponseEntity.ok("Register successful");
     }
 

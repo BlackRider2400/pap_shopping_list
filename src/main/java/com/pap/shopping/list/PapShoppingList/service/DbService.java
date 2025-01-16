@@ -181,4 +181,25 @@ public class DbService {
                 .map(item -> item.getShoppingList().getId())
                 .orElseThrow(() -> new IllegalArgumentException("Item not found"));
     }
+
+    public List<String> getAllUserEmails(Long userId) {
+        List<String> userEmails = userRepository.findAll().stream().map(User::getEmail).toList();
+        String currentUserEmail = userRepository.findById(userId).orElseThrow().getEmail();
+        userEmails = userEmails.stream().filter(email -> !email.equals(currentUserEmail)).toList();
+        return userEmails;
+    }
+
+    public void deleteUser(Long userId) {
+        List<ShoppingList> lists = getAllShoppingListsByUserId(userId);
+        lists.stream().filter(list ->
+            list.getOwner().getId().equals(userId))
+                        .forEach(list -> deleteShoppingList(list.getId()));
+
+        for(ShoppingList list : lists) {
+            list.getSharedUsers().removeIf(user -> user.getId().equals(userId));
+            shoppingListRepository.save(list);
+        }
+
+        userRepository.deleteById(userId);
+    }
 }
