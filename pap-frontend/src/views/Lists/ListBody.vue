@@ -139,7 +139,6 @@
 			list.value.items.push(newItem);
 			await nextTick();
 			const newActualId = await saveNewItem(newItem);
-			console.log(newActualId);
 			if (newActualId) {
 				newItem.id = newActualId;
 
@@ -277,11 +276,11 @@
 		}
 	};
 
-	const shareWith = async (user = "rafalmironko@gmail.com") => {
+	const shareWith = async () => {
 		try {
 			await axios.post(
-				`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/addSharedUser/${list.value.id}`,
-				"krzysztof@baralkiewicz.pl",
+				`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/addSharedUser/${list.value.id}?email=test%40testing.ru`,
+				null,
 				{
 					headers: {
 						"Content-Type": "text/plain",
@@ -294,6 +293,27 @@
 			console.error("Error trying to share this list", error);
 		}
 	};
+
+	// const shareWith = async (user = "krzysztof@baralkiewicz.pl") => {
+	// 	try {
+	// 		await axios.post(
+	// 			`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/addSharedUser/${list.value.id}`,
+	// 			null, // Brak ciała żądania
+	// 			{
+	// 				params: { email: user }, // Dodanie email jako parametr zapytania
+	// 				headers: {
+	// 					"Content-Type": "text/plain",
+	// 					...getAuthHeaders(),
+	// 				},
+	// 				withCredentials: true,
+	// 			}
+	// 		);
+	// 		// Opcjonalnie: odśwież listę po udostępnieniu
+	// 		// await fetchDataFromApi();
+	// 	} catch (error) {
+	// 		console.error("Error trying to share this list", error);
+	// 	}
+	// };
 </script>
 
 <style scoped lang="scss">
