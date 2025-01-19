@@ -151,7 +151,7 @@ public class PapShoppingListController {
     @PostMapping("/addNewItem/{listId}")
     public ResponseEntity<Map<String, Object>> addNewItem(@PathVariable Long listId, @RequestBody Item newItem) {
         Long userId = getCurrentUserId();
-        if (canAccessList(listId, userId)) {
+        if (canAccessList(listId, userId) && newItem.getData() != null && !newItem.getData().isBlank() ){
             return dbService.getShoppingListByIdAndUserId(listId, userId).map(list -> {
                 if (newItem.getQuantity() == null) {
                     newItem.setQuantity(0.0);
@@ -172,7 +172,10 @@ public class PapShoppingListController {
     @PostMapping("/addSharedUser/{listId}")
     public ResponseEntity<Void> addSharedUser(@PathVariable Long listId, @RequestParam String email) {
         Long userId = getCurrentUserId();
-        if (dbService.isOwnerOfList(listId, userId) && dbService.getUserByEmail(email).isPresent() &&
+        if (canAccessList(listId, userId)) {
+            return ResponseEntity.ok().build();
+        }
+        else if (dbService.isOwnerOfList(listId, userId) && dbService.getUserByEmail(email).isPresent() &&
         !dbService.getUserById(userId).orElseThrow(() -> new IllegalArgumentException("User not found")).getEmail().equals(email)) {
             dbService.addSharedUserToList(listId, email);
             return ResponseEntity.ok().build();
@@ -181,7 +184,7 @@ public class PapShoppingListController {
     }
 
     @DeleteMapping("/removeSharedUser/{listId}")
-    public ResponseEntity<Void> removeSharedUser(@PathVariable Long listId, @RequestBody String email) {
+    public ResponseEntity<Void> removeSharedUser(@PathVariable Long listId, @RequestParam String email) {
         Long userId = getCurrentUserId();
         if (dbService.isOwnerOfList(listId, userId)) {
             dbService.removeSharedUserFromList(listId, email);
