@@ -1,13 +1,20 @@
 <template>
 	<div id="content" v-if="list">
 		<section class="list-header">
+			<!-- Dodajemy @focus i @blur na Input -->
 			<Input
 				v-model="list.name"
 				:id="list.id.toString()"
 				:label="`List Name: ${list.name}`"
 				:placeholder="`Enter new name for list ${list.name}`"
 				mode="h2"
-				@blur="renameList"
+				@focus="syncSlow()"
+				@blur="
+					() => {
+						renameList();
+						syncFast();
+					}
+				"
 			/>
 		</section>
 
@@ -27,6 +34,7 @@
 							class="item-checkbox"
 						/>
 
+						<!-- Tekst pozycji -->
 						<Input
 							class="input-text"
 							v-model="item.data"
@@ -35,9 +43,16 @@
 							mode="p"
 							:disabled="item.status"
 							:ref="setInputRef(item.id || item.tempId, 'text')"
-							@blur="updateItem(item)"
+							@focus="syncSlow()"
+							@blur="
+								() => {
+									updateItem(item);
+									syncFast();
+								}
+							"
 						/>
 
+						<!-- Jednostka -->
 						<Input
 							class="input-unit"
 							v-model="item.unit"
@@ -46,9 +61,16 @@
 							mode="p"
 							:disabled="item.status"
 							:ref="setInputRef(item.id || item.tempId, 'unit')"
-							@blur="updateItem(item)"
+							@focus="syncSlow()"
+							@blur="
+								() => {
+									renameList();
+									updateItem(item);
+								}
+							"
 						/>
 
+						<!-- Ilość -->
 						<Input
 							class="input-amount"
 							type="number"
@@ -58,7 +80,13 @@
 							mode="p"
 							:disabled="item.status"
 							:ref="setInputRef(item.id || item.tempId, 'amount')"
-							@blur="updateItem(item)"
+							@focus="syncSlow()"
+							@blur="
+								() => {
+									renameList();
+									updateItem(item);
+								}
+							"
 							@change="updateItem(item)"
 						/>
 					</div>
@@ -79,9 +107,9 @@
 		<section class="list-info">
 			<p>Owner: {{ list.owner }}</p>
 			<p>Users: {{ list.users.map((user) => user).join(", ") }}</p>
-			<Button class="add-item-button" @click="shareWith"
-				>Udostępnij</Button
-			>
+			<Button class="add-item-button" @click="shareWith">
+				Udostępnij
+			</Button>
 		</section>
 	</div>
 
@@ -91,7 +119,17 @@
 </template>
 
 <script setup>
-	import { defineProps, inject, computed, nextTick, reactive } from "vue";
+	import {
+		defineProps,
+		inject,
+		computed,
+		nextTick,
+		reactive,
+		onMounted,
+		onBeforeUnmount,
+		ref,
+		watch,
+	} from "vue";
 	import "@fortawesome/fontawesome-free/css/all.css";
 	import Button from "@/components/Button.vue";
 	import Input from "@/components/Input.vue";
@@ -120,9 +158,10 @@
 		return headers;
 	};
 
+	const listId = computed(() => Number(props.id));
+
 	const list = computed(() => {
-		const listId = Number(props.id);
-		return lists.lists.find((l) => l.id === listId) || null;
+		return lists.lists.find((l) => l.id === listId.value) || null;
 	});
 
 	const inputRefs = reactive({});
@@ -177,9 +216,8 @@
 
 	const renameList = async () => {
 		if (list.value) {
-			console.log(list.value.name);
 			try {
-				const response = await axios.put(
+				await axios.put(
 					`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/renameList/${list.value.id}`,
 					list.value.name,
 					{
@@ -206,9 +244,14 @@
 				{
 					data: item.data,
 					status: item.status,
+					unit: item.unit,
+					quantity: item.quantity,
 				},
 				{
-					headers: getAuthHeaders(),
+					headers: {
+						"Content-Type": "application/json",
+						...getAuthHeaders(),
+					},
 					withCredentials: true,
 				}
 			);
@@ -241,7 +284,7 @@
 		}
 
 		try {
-			const response = await axios.put(
+			await axios.put(
 				`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/changeItem/${item.id}`,
 				item,
 				{
@@ -279,7 +322,7 @@
 	const shareWith = async () => {
 		try {
 			await axios.post(
-				`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/addSharedUser/${list.value.id}?email=test%40testing.ru`,
+				`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/addSharedUser/${list.value.id}?email=rafalmironko@gmail.com`,
 				null,
 				{
 					headers: {
@@ -294,27 +337,81 @@
 		}
 	};
 
-	// const shareWith = async (user = "krzysztof@baralkiewicz.pl") => {
-	// 	try {
-	// 		await axios.post(
-	// 			`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/addSharedUser/${list.value.id}`,
-	// 			null, // Brak ciała żądania
-	// 			{
-	// 				params: { email: user }, // Dodanie email jako parametr zapytania
-	// 				headers: {
-	// 					"Content-Type": "text/plain",
-	// 					...getAuthHeaders(),
-	// 				},
-	// 				withCredentials: true,
-	// 			}
-	// 		);
-	// 		// Opcjonalnie: odśwież listę po udostępnieniu
-	// 		// await fetchDataFromApi();
-	// 	} catch (error) {
-	// 		console.error("Error trying to share this list", error);
-	// 	}
-	// };
+	/*
+														--------------------------
+														Mechanizm synchronizacji
+														--------------------------
+													*/
+
+	// Funkcja odświeżająca listę
+	const refreshListData = async () => {
+		console.log("Wywołanie refreshListData dla listy ID:", listId.value);
+		try {
+			const response = await axios.get(
+				`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/getListById/${listId.value}`,
+				{ headers: getAuthHeaders(), withCredentials: true }
+			);
+			updateListInStore(response.data);
+		} catch (error) {
+			console.error("Błąd podczas synchronizacji listy:", error);
+		}
+	};
+
+	const updateListInStore = (freshData) => {
+		const index = lists.lists.findIndex((l) => l.id === freshData.id);
+		if (index !== -1) {
+			// Aktualizacja istniejącej listy
+			lists.lists[index].name = freshData.name;
+			lists.lists[index].owner = freshData.owner;
+			lists.lists[index].users = reactive(
+				freshData.sharedUsers?.map((u) => u.email) ?? []
+			);
+			lists.lists[index].items = reactive(
+				freshData.items.map(
+					(it) =>
+						new Item(it.id, it.data, it.status, it.unit, it.quantity)
+				)
+			);
+			console.log(`Lista ID ${freshData.id} zaktualizowana.`);
+		} else {
+			// Lista nie została znaleziona – dodajemy nową listę do store
+			console.warn(
+				"Lista nieznaleziona w store podczas synchronizacji. Dodaję nową listę."
+			);
+			// Ewentualnie stwórz nowy obiekt List
+		}
+	};
+	let syncInterval = null;
+
+	function startSync(intervalMs) {
+		if (syncInterval) {
+			clearInterval(syncInterval);
+		}
+		syncInterval = setInterval(refreshListData, intervalMs);
+	}
+
+	// Funkcje sterujące interwałem:
+	function syncFast() {
+		console.log("Blur detected - switching to fast sync (100ms)");
+		startSync(500);
+	}
+
+	function syncSlow() {
+		console.log("Focus detected - switching to slow sync (5000ms)");
+		startSync(10000);
+	}
+
+	onMounted(() => {
+		syncFast(); // Uruchamiamy domyślnie szybką synchronizację
+	});
+
+	onBeforeUnmount(() => {
+		if (syncInterval) {
+			clearInterval(syncInterval);
+		}
+	});
 </script>
+
 
 <style scoped lang="scss">
 	:root {
@@ -406,6 +503,10 @@
 			.input-amount {
 				flex-shrink: 1;
 				min-width: 0;
+
+				&:focus {
+					border-color: red;
+				}
 			}
 
 			.item-actions {

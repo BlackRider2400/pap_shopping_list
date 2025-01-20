@@ -1,5 +1,5 @@
 export class Item {
-	constructor(id, data, status = true, unit = "sztuki", quantity = 1.0) {
+	constructor(id, data, status = true, unit = "GRAM", quantity = 1.0) {
 		this.id = id;
 		this.data = data;
 		this.status = status;

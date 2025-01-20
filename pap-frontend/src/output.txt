@@ -1,0 +1,2462 @@
+==== ./App.vue ====
+<template>
+	<div id="app">
+		<div id="main">
+			<Nav id="nav" />
+			<router-view />
+			<Footer id="footer" />
+		</div>
+	</div>
+</template>
+
+  <script setup>
+	import Nav from "./components/Nav.vue";
+	import Footer from "./components/Footer.vue";
+	import axios from "axios";
+	import { provide } from "vue";
+	import { Lists } from "./models/Lists";
+
+	const lists = Lists.fromJSON([]);
+
+	const fetchDataFromApi = async () => {
+		try {
+			const endpoint =
+				"https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/getAllLists";
+			const response = await axios.get(endpoint, { withCredentials: true });
+			lists.updateFromJSON(response.data);
+		} catch (error) {
+			console.error("Błąd podczas pobierania danych z API:", error);
+		}
+	};
+
+	provide("lists", lists);
+	provide("fetchDataFromApi", fetchDataFromApi);
+</script>
+
+<style lang="scss">
+	* {
+		box-sizing: border-box;
+	}
+	#app {
+		width: 100vw;
+		min-height: 100vh;
+	}
+	#main {
+		display: flex;
+		flex-direction: column;
+		width: 100%;
+		max-width: 1200px;
+		margin: auto;
+		height: 100%;
+		min-height: 100vh;
+	}
+	#view {
+		flex: 1;
+	}
+	#nav {
+		flex: 0 0 auto;
+	}
+	#footer {
+		flex: 0 0 auto;
+	}
+</style>
+
+
+==== ./main.js ====
+// main.js
+import { createApp } from "vue";
+import App from "./App.vue";
+import router from "./router";
+import Toast, { POSITION } from "vue-toastification";
+import "vue-toastification/dist/index.css";
+import axios from "axios";
+import "./style.scss";
+import Cookies from "js-cookie"; // Dodano import js-cookie
+
+const app = createApp(App);
+
+// Ustawienie podstawowej ścieżki API
+
+// Ustawienie Axios do wysyłania ciasteczek z żądaniami
+axios.defaults.withCredentials = true;
+
+// Dodanie interceptora do sprawdzania odpowiedzi i obsługi błędów globalnych
+axios.interceptors.response.use(
+	(response) => response,
+	(error) => {
+		if (error.response && error.response.status === 401) {
+			// Możesz dodać globalną obsługę błędów, np. przekierowanie do logowania
+			router.push({ name: "LogIn" });
+		}
+		return Promise.reject(error);
+	}
+);
+
+app.use(router);
+
+app.use(Toast, {
+	position: POSITION.BOTTOM_LEFT,
+	timeout: 3000,
+	closeOnClick: true,
+	pauseOnFocusLoss: true,
+	pauseOnHover: true,
+	draggable: true,
+	draggablePercent: 0.6,
+	showCloseButtonOnHover: false,
+	hideProgressBar: false,
+	closeButton: "button",
+	icon: true,
+	rtl: false,
+});
+
+app.mount("#app");
+
+
+==== ./components\Button.vue ====
+<template>
+	<button :class="['button', type]" @click="handleClick">
+		<slot>Przycisk</slot>
+	</button>
+</template>
+
+<script setup>
+	import { defineProps, defineEmits } from "vue";
+
+	const props = defineProps({
+		type: {
+			type: String,
+			default: "primary",
+		},
+	});
+
+	const emit = defineEmits(["click"]);
+
+	const handleClick = (event) => {
+		emit("click", event);
+	};
+</script>
+
+<style scoped lang="scss">
+	.button {
+		display: inline-block;
+		padding: 10px 20px;
+		width: 100%;
+		font-size: 16px;
+		font-weight: bold;
+		border: 2px solid transparent;
+		border-radius: 5px;
+		cursor: pointer;
+		text-align: center;
+		transition: all 0.3s ease-in-out;
+
+		&.primary {
+			background-color: #007bff;
+			color: white;
+			border-color: #007bff;
+
+			&:hover {
+				background-color: #0056b3;
+				border-color: #0056b3;
+			}
+		}
+
+		&.secondary {
+			background-color: #f8f9fa;
+			color: #333;
+			border-color: #ced4da;
+
+			&:hover {
+				background-color: #e2e6ea;
+				border-color: #adb5bd;
+			}
+		}
+
+		&.neutral {
+			background-color: white;
+			color: #333;
+			border-color: #333;
+
+			&:hover {
+				background-color: #f8f9fa;
+			}
+		}
+
+		&:disabled {
+			background-color: #ccc;
+			color: #777;
+			cursor: not-allowed;
+			border-color: #ccc;
+		}
+	}
+</style>
+
+
+==== ./components\Footer.vue ====
+<template>
+	<footer class="footer">
+		<div class="footer-content">
+			<div class="footer-section">
+				<h3>O nas</h3>
+				<p>
+					Jesteśmy firmą tworzącą innowacyjne rozwiązania dla Twoich
+					projektów.
+				</p>
+			</div>
+			<div class="footer-section">
+				<h3>Nawigacja</h3>
+				<ul>
+					<li><router-link to="/">Strona główna</router-link></li>
+					<li>
+						<router-link to="/register">Rejestracja</router-link>
+					</li>
+					<li>
+						<router-link to="/lists">Listy Zakupowe</router-link>
+					</li>
+					<li @click="handleLogout" class="pointer-class">Logout</li>
+				</ul>
+			</div>
+			<div class="footer-section">
+				<h3>Kontakt</h3>
+				<p>Email: kontakt@firma.pl</p>
+				<p>Telefon: +48 123 456 789</p>
+			</div>
+		</div>
+		<div class="footer-bottom">
+			<p>
+				&copy; {{ new Date().getFullYear() }} Firma. Wszelkie prawa
+				zastrzeżone.
+			</p>
+		</div>
+	</footer>
+</template>
+
+<script setup>
+	import { useRouter } from "vue-router";
+
+	const router = useRouter();
+
+	const handleLogout = () => {
+		localStorage.removeItem("isAuthenticated");
+		localStorage.removeItem("authEmail");
+		localStorage.removeItem("authPassword");
+		router.push({ name: "LogIn" });
+	};
+</script>
+
+<style scoped lang="scss">
+	.footer {
+		background-color: #333;
+		color: white;
+		padding: 20px 10px;
+		text-align: center;
+
+		.footer-content {
+			display: flex;
+			justify-content: space-around;
+			flex-wrap: wrap;
+			margin-bottom: 20px;
+
+			.footer-section {
+				flex: 1;
+				min-width: 200px;
+				margin: 10px;
+
+				h3 {
+					margin-bottom: 10px;
+					font-size: 18px;
+					color: #007bff;
+				}
+
+				p {
+					font-size: 14px;
+					line-height: 1.5;
+				}
+
+				ul {
+					list-style: none;
+					padding: 0;
+
+					li.pointer-class {
+						cursor: pointer;
+					}
+
+					li {
+						margin: 5px 0;
+
+						a {
+							color: white;
+							text-decoration: none;
+							transition: color 0.3s;
+
+							&:hover {
+								color: #007bff;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		.footer-bottom {
+			font-size: 12px;
+			border-top: 1px solid #555;
+			padding-top: 10px;
+		}
+	}
+</style>
+
+
+==== ./components\Input.vue ====
+<template>
+	<div class="input-wrapper">
+		<label v-if="label && mode == 'default'" :for="id">{{ label }}</label>
+		<input
+			ref="inputRef"
+			:id="id"
+			:type="type"
+			:placeholder="placeholder"
+			:value="modelValue"
+			@input="updateValue"
+			:class="{
+				error: !!errorMessage,
+				'h2-like': mode == 'h2',
+				'p-like': mode == 'p',
+				crossed: crossed,
+			}"
+			:disabled="disabled"
+			@blur="handleBlur"
+		/>
+		<div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
+	</div>
+</template>
+
+  <script setup>
+	import { defineProps, defineEmits, watch, ref, nextTick } from "vue";
+
+	const props = defineProps({
+		id: {
+			type: String,
+			required: true,
+		},
+		type: {
+			type: String,
+			default: "text",
+		},
+		placeholder: {
+			type: String,
+			default: "",
+		},
+		label: {
+			type: String,
+			default: "",
+		},
+		modelValue: {
+			type: [String, Number],
+			required: true,
+		},
+		errorMessage: {
+			type: String,
+			default: "",
+		},
+		mode: {
+			type: String,
+			default: "default",
+		},
+		disabled: {
+			type: Boolean,
+			default: false,
+		},
+		crossed: {
+			type: Boolean,
+			default: false,
+		},
+		shouldFocus: {
+			type: Boolean,
+			default: false,
+		},
+	});
+
+	const emit = defineEmits(["update:modelValue", "focused", "blur"]);
+
+	const updateValue = (event) => {
+		emit("update:modelValue", event.target.value);
+	};
+
+	const inputRef = ref(null);
+
+	const setFocus = () => {
+		if (inputRef.value) {
+			inputRef.value.focus();
+			emit("focused");
+		}
+	};
+
+	watch(
+		() => props.shouldFocus,
+		(newVal) => {
+			if (newVal) {
+				setFocus();
+			}
+		}
+	);
+
+	const handleBlur = () => {
+		emit("blur");
+	};
+
+	defineExpose({
+		focus: setFocus,
+	});
+</script>
+
+  <style scoped lang="scss">
+	.input-wrapper {
+		display: flex;
+		flex-direction: column;
+
+		label {
+			margin-bottom: 5px;
+			font-weight: bold;
+			color: #555;
+		}
+
+		input {
+			padding: 10px;
+			font-size: 16px;
+			border: 1px solid #ccc;
+			border-radius: 5px;
+			outline: none;
+			transition: border-color 0.3s;
+
+			&:focus {
+				border-color: #007bff;
+			}
+
+			&.error {
+				border-color: red;
+			}
+
+			&.h2-like {
+				font-size: 24px;
+				font-weight: bold;
+				border: none;
+				border-bottom: 2px solid #007bff;
+				padding: 5px;
+				outline: none;
+				transition: border-color 0.3s;
+			}
+
+			&.p-like {
+				font-size: 16px;
+				font-weight: normal;
+				border: none;
+				padding: 5px;
+				outline: none;
+				transition: border-color 0.3s;
+			}
+
+			&.crossed {
+				text-decoration: line-through;
+			}
+		}
+
+		.error-message {
+			color: red;
+			font-size: 14px;
+			margin-top: 5px;
+		}
+	}
+</style>
+
+
+==== ./components\Nav.vue ====
+<template>
+	<nav>
+		<div id="logo">
+			<router-link to="/">Logo jest tutaj</router-link>
+		</div>
+		<div id="burger" @click="toggleMenu">☰</div>
+		<div id="link-tree-overlay" :class="{ active: isMenuOpen }">
+			<div id="link-tree">
+				<router-link to="/" @click="closeMenu"
+					>Strona główna</router-link
+				>
+				<router-link to="/login" @click="closeMenu">Login</router-link>
+				<router-link to="/register" @click="closeMenu"
+					>Register</router-link
+				>
+				<router-link to="/lists" @click="closeMenu"
+					>Listy Zakupowe</router-link
+				>
+			</div>
+		</div>
+	</nav>
+</template>
+
+<script setup>
+	import { ref } from "vue";
+
+	const isMenuOpen = ref(false);
+
+	const toggleMenu = () => {
+		isMenuOpen.value = !isMenuOpen.value;
+		document.body.style.overflow = isMenuOpen.value ? "hidden" : "auto";
+	};
+
+	const closeMenu = () => {
+		isMenuOpen.value = false;
+		document.body.style.overflow = "auto";
+	};
+</script>
+
+<style scoped lang="scss">
+	nav {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 10px 20px;
+		background-color: #333;
+		color: white;
+		position: relative;
+		z-index: 10;
+		user-select: none;
+
+		#logo {
+			font-size: 1.5rem;
+			font-weight: bold;
+
+			a {
+				color: white;
+				text-decoration: none;
+			}
+		}
+
+		#burger {
+			font-size: 1.5rem;
+			cursor: pointer;
+			display: block;
+			z-index: 20;
+			color: white;
+		}
+	}
+
+	/* Pełnoekranowe pokrycie po otwarciu menu */
+	#link-tree-overlay {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		background-color: rgba(0, 0, 0, 0.9); /* Półprzezroczyste tło */
+		display: none; /* Domyślnie ukryte */
+		justify-content: center;
+		align-items: center;
+		z-index: 15;
+
+		&.active {
+			display: flex; /* Pokaż menu */
+		}
+	}
+
+	/* Styl menu linków */
+	#link-tree {
+		display: flex;
+		flex-direction: column;
+		gap: 20px;
+		text-align: center;
+
+		a {
+			color: white;
+			text-decoration: none;
+			font-size: 1.5rem;
+			transition: color 0.3s;
+
+			&:hover {
+				color: #007bff;
+			}
+		}
+	}
+</style>
+
+
+==== ./models\Item.js ====
+export class Item {
+	constructor(id, data, status = true, unit = "sztuki", quantity = 1.0) {
+		this.id = id;
+		this.data = data;
+		this.status = status;
+		this.unit = unit;
+		this.quantity = quantity;
+	}
+}
+
+
+==== ./models\List.js ====
+import { reactive } from "vue";
+import { Item } from "./Item";
+
+export class List {
+	constructor(id, name, items = [], owner = null, users = []) {
+		this.id = id;
+		this.name = name;
+		this.items = reactive(
+			items.map(
+				(itemData) => new Item(itemData.id, itemData.data, itemData.status, itemData.unit, itemData.quantity)
+			)
+		);
+		this.owner = owner;
+		this.users = reactive(users);
+	}
+}
+
+
+==== ./models\Lists.js ====
+import { reactive } from "vue";
+import { List } from "./List";
+
+export class Lists {
+	constructor(lists = []) {
+		this.lists = reactive(lists);
+	}
+
+	static fromJSON(jsonData) {
+		const listsArray = jsonData.map(
+			(listData) => new List(listData.id, listData.name, listData.items, listData.owner, listData.users)
+		);
+		return new Lists(listsArray);
+	}
+
+	updateFromJSON(jsonData) {
+		this.lists.splice(0, this.lists.length);
+		jsonData.forEach((listData) => {
+			this.lists.push(new List(listData.id, listData.name, listData.items, listData.owner, listData.users));
+		});
+	}
+}
+
+
+==== ./router\index.js ====
+// router/index.js
+import { createRouter, createWebHistory } from "vue-router";
+import Cookies from "js-cookie";
+
+const routes = [
+	{
+		path: "/",
+		name: "Home",
+		component: () => import("../views/Home.vue"),
+	},
+	{
+		path: "/login",
+		name: "LogIn",
+		component: () => import("../views/LogIn.vue"),
+	},
+	{
+		path: "/register",
+		name: "Register",
+		component: () => import("../views/Register.vue"),
+	},
+	{
+		path: "/lists",
+		redirect: "/lists/1",
+		name: "Lists",
+		component: () => import("../views/Lists.vue"),
+		meta: { requiresAuth: true }, // Wymaga autoryzacji
+		children: [
+			{
+				path: ":id",
+				name: "ListDetail",
+				component: () => import("../views/Lists/ListBody.vue"),
+				props: true,
+				meta: { requiresAuth: true }, // Wymaga autoryzacji
+			},
+		],
+	},
+	// Dodaj inne trasy, które wymagają autoryzacji
+];
+
+const router = createRouter({
+	history: createWebHistory(import.meta.env.BASE_URL),
+	routes,
+});
+
+// Globalny strażnik nawigacyjny
+router.beforeEach((to, from, next) => {
+	const requiresAuth = to.matched.some((record) => record.meta.requiresAuth);
+	const isAuthenticated = localStorage.getItem("isAuthenticated") === "true";
+
+	if (requiresAuth && !isAuthenticated) {
+		next({ name: "LogIn" });
+	} else {
+		next();
+	}
+});
+
+export default router;
+
+
+==== ./views\getStarfield.js ====
+import * as THREE from "three";
+import ball from "./circle.png";
+
+export default function getStarfield({ numStars = 500 } = {}) {
+	function randomSpherePoint() {
+		const radius = Math.random() * 25 + 25;
+		const u = Math.random();
+		const v = Math.random();
+		const theta = 2 * Math.PI * u;
+		const phi = Math.acos(2 * v - 1);
+		let x = radius * Math.sin(phi) * Math.cos(theta);
+		let y = radius * Math.sin(phi) * Math.sin(theta);
+		let z = radius * Math.cos(phi);
+
+		return {
+			pos: new THREE.Vector3(x, y, z),
+			hue: 0.6,
+			minDist: radius,
+		};
+	}
+	const verts = [];
+	const colors = [];
+	const positions = [];
+	let col;
+	for (let i = 0; i < numStars; i += 1) {
+		let p = randomSpherePoint();
+		const { pos, hue } = p;
+		positions.push(p);
+		col = new THREE.Color().setHSL(hue, 0.2, Math.random());
+		verts.push(pos.x, pos.y, pos.z);
+		colors.push(col.r, col.g, col.b);
+	}
+	const geo = new THREE.BufferGeometry();
+	geo.setAttribute("position", new THREE.Float32BufferAttribute(verts, 3));
+	geo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+	const mat = new THREE.PointsMaterial({
+		size: 0.2,
+		vertexColors: true,
+		map: new THREE.TextureLoader().load(ball),
+	});
+	const points = new THREE.Points(geo, mat);
+	return points;
+}
+
+
+==== ./views\Home.vue ====
+<template>
+	<div id="home-page">
+		<!-- Sekcja Hero -->
+		<section class="hero">
+			<div class="hero-overlay"></div>
+			<div class="hero-content">
+				<h2>Dla wszystkich ludzi, którzy zapominają wszystko kupić</h2>
+				<h1>
+					W końcu! Przełomowa Metoda Dla Zapominalskich, Żeby Już
+					Nigdy Nie Zapomnieć O Niczym Na Zakupach, Gwarantowane!
+				</h1>
+			</div>
+		</section>
+
+		<!-- Sekcja "Co można zrobić" -->
+		<section class="features">
+			<div class="container">
+				<h2>
+					Też masz czasem tak, że idziesz na zakupy, ale zapominasz,
+					co chciałeś kupić?
+				</h2>
+				<h2>
+					Zwykle kończy się to tym, że przypomnisz sobie o tym dopiero
+					po powrocie do domu...
+				</h2>
+				<Button class="cta-button" @click="navigateToLists"
+					>Tak, chcę pozbyć się tego problemu!</Button
+				>
+			</div>
+		</section>
+		<section class="features">
+			<div class="container">
+				<h2>Możesz zrobić kilka rzeczy.</h2>
+				<div class="features-container">
+					<div
+						class="feature-item"
+						v-for="amplify in amplifies"
+						:key="amplify.id"
+					>
+						<i :class="amplify.icon" class="feature-icon"></i>
+						<h3>{{ amplify.title }}</h3>
+						<p v-html="amplify.description"></p>
+					</div>
+				</div>
+				<h2>
+					Ale, no szczerze, żadna z tych opcji nie jest zbyt dobra.
+				</h2>
+				<h2>Właśnie dlatego stworzyliśmy Listę Zakupową 2000!</h2>
+				<h2>
+					Od teraz, kiedy nie chcesz o czymś zapomnieć, możesz to
+					sobie zapisać!
+				</h2>
+				<p>
+					Ta przełomowa metoda opracowana przez naszych najlepszych
+					naukowców z działu R&B sprawiła, że wielu ludzi, robiących
+					na co dzień zakupy, odwróciło swoje życie o 360 stopni!
+				</p>
+				<Button class="cta-button" @click="navigateToLists"
+					>Rozpocznij teraz</Button
+				>
+			</div>
+		</section>
+
+		<!-- Sekcja "Dlaczego my" -->
+		<section class="features why-us">
+			<div class="container">
+				<h2>Dlaczego powienieneś korzystać z naszej listy?</h2>
+				<div class="features-container">
+					<div
+						class="feature-item"
+						v-for="feature in features"
+						:key="feature.id"
+					>
+						<i :class="feature.icon" class="feature-icon"></i>
+						<h3>{{ feature.title }}</h3>
+						<p>{{ feature.description }}</p>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- Kontenery Three.js (wkomponowane w layout) -->
+		<section class="three-section">
+			<h2 class="three-title">
+				Lista tak dobra, że wywali Cię na księżyc<br />(lub do tunelu
+				czasoprzestrzennego)
+			</h2>
+			<div ref="threeContainer" class="three-container"></div>
+			<div ref="threeContainerSecond" class="three-container"></div>
+		</section>
+
+		<!-- Sekcja CTA na dole strony -->
+		<section class="cta">
+			<div class="container">
+				<h2>Dołącz do tysięcy zadowolonych użytkowników!</h2>
+				<Button class="cta-button" @click="navigateToSignup"
+					>Zarejestruj się teraz</Button
+				>
+			</div>
+		</section>
+	</div>
+</template>
+
+  <script setup>
+	import { ref, onMounted } from "vue";
+	import { useRouter } from "vue-router";
+	import Button from "@/components/Button.vue";
+	import * as THREE from "three";
+	import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+
+	import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
+	import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
+	import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
+
+	import earthTexture from "@/assets/moonmap4k.jpg";
+	import getStarfield from "./getStarfield.js";
+	import spline from "./spline.js";
+	import { update } from "three/examples/jsm/libs/tween.module.js";
+
+	const amplifies = [
+		{
+			id: 1,
+			icon: "fa-solid fa-list-check",
+			title: "Ucz się na pamięć",
+			description:
+				"Przed pójściem na zakupy uczyć się na pamięć tego, czego potrzebujesz.<br />Jednak to rozwiązanie jest dość niewygodne i zajmuje sporo czasu.",
+		},
+		{
+			id: 2,
+			icon: "fa-solid fa-share-nodes",
+			title: "Zatrudnij kogoś",
+			description:
+				"Możesz też zapłacić komuś, żeby myślał za Ciebie.<br />Niestety, nie każdy może sobie na to pozwolić.",
+		},
+	];
+
+	const features = [
+		{
+			id: 1,
+			icon: "fa-solid fa-list-check",
+			title: "Intuicyjny interfejs",
+			description:
+				"Łatwe tworzenie i zarządzanie listami zakupowymi dzięki przejrzystemu i intuicyjnemu interfejsowi.",
+		},
+		{
+			id: 2,
+			icon: "fa-solid fa-share-nodes",
+			title: "Udostępnianie",
+			description:
+				"Dziel się swoimi listami zakupów z rodziną i znajomymi w czasie rzeczywistym.",
+		},
+		{
+			id: 3,
+			icon: "fa-solid fa-sync-alt",
+			title: "Synchronizacja",
+			description:
+				"Twoje listy są synchronizowane na wszystkich urządzeniach, dzięki czemu masz do nich dostęp zawsze i wszędzie.",
+		},
+		{
+			id: 4,
+			icon: "fa-solid fa-lock",
+			title: "Bezpieczeństwo",
+			description:
+				"Zapewniamy najwyższy poziom bezpieczeństwa danych, aby Twoje informacje były zawsze chronione.",
+		},
+	];
+
+	const router = useRouter();
+
+	const navigateToLists = () => {
+		router.push("/lists");
+	};
+
+	const navigateToSignup = () => {
+		router.push("/register");
+	};
+
+	// Three.js kontenery
+	const threeContainer = ref(null);
+	const threeContainerSecond = ref(null);
+
+	onMounted(() => {
+		// Pierwszy kontener
+		if (threeContainer.value) {
+			const w = threeContainer.value.clientWidth;
+			const h = threeContainer.value.clientHeight;
+			const renderer = new THREE.WebGLRenderer({ antialias: true });
+			renderer.setSize(w, h);
+			threeContainer.value.appendChild(renderer.domElement);
+
+			const fov = 75;
+			const aspect = w / h;
+			const near = 0.1;
+			const far = 1000;
+			const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+			camera.position.z = 2.5;
+
+			const scene = new THREE.Scene();
+
+			const earthGroup = new THREE.Group();
+			earthGroup.rotation.z = -23.5 * (Math.PI / 180);
+			scene.add(earthGroup);
+
+			const controls = new OrbitControls(camera, renderer.domElement);
+			controls.enableDamping = true;
+			controls.dampingFactor = 0.02;
+
+			const loader = new THREE.TextureLoader();
+			const geometry = new THREE.IcosahedronGeometry(1, 16);
+			const material = new THREE.MeshStandardMaterial({
+				map: loader.load(earthTexture),
+			});
+			const earthMesh = new THREE.Mesh(geometry, material);
+			earthGroup.add(earthMesh);
+
+			const stars = getStarfield();
+			scene.add(stars);
+
+			const sunLight = new THREE.DirectionalLight(0xffffff);
+			sunLight.position.set(-2, 0.5, 1.5);
+			scene.add(sunLight);
+
+			function animate() {
+				requestAnimationFrame(animate);
+				earthMesh.rotation.y += 0.001;
+				renderer.render(scene, camera);
+				controls.update();
+			}
+
+			animate();
+		}
+
+		// Drugi kontener
+		if (threeContainerSecond.value) {
+			const w = threeContainerSecond.value.clientWidth;
+			const h = threeContainerSecond.value.clientHeight;
+
+			// Renderer
+			const renderer = new THREE.WebGLRenderer({ antialias: true });
+			renderer.setSize(w, h);
+			renderer.toneMapping = THREE.ACESFilmicToneMapping;
+			renderer.outputColorSpace = THREE.SRGBColorSpace;
+			threeContainerSecond.value.appendChild(renderer.domElement);
+
+			// Camera
+			const fov = 75;
+			const aspect = w / h;
+			const near = 0.1;
+			const far = 1000;
+			const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+			camera.position.z = 30;
+
+			// Scene
+			const scene = new THREE.Scene();
+			scene.fog = new THREE.FogExp2(0x000000, 0.3);
+
+			// Controls
+			const controls = new OrbitControls(camera, renderer.domElement);
+			controls.enableDamping = true;
+			controls.dampingFactor = 0.03;
+
+			// Post processing
+			const renderScene = new RenderPass(scene, camera);
+			const bloomPass = new UnrealBloomPass(
+				new THREE.Vector2(w, h),
+				1.5,
+				0.4,
+				100
+			);
+			bloomPass.threshold = 0.002;
+			bloomPass.strength = 3.5;
+			bloomPass.radius = 0;
+			const composer = new EffectComposer(renderer);
+			composer.addPass(renderScene);
+			composer.addPass(bloomPass);
+
+			// Tworzenie geometrii Tube
+			const tubeGeo = new THREE.TubeGeometry(spline, 222, 0.65, 16, true);
+
+			// Krawędzie rurki
+			const edges = new THREE.EdgesGeometry(tubeGeo, 0.2);
+			const lineMat = new THREE.LineBasicMaterial({ color: 0xff0000 });
+			const tubeLines = new THREE.LineSegments(edges, lineMat);
+			scene.add(tubeLines);
+
+			// Dodanie kostek
+			const numBoxes = 55;
+			const size = 0.075;
+			const boxGeo = new THREE.BoxGeometry(size, size, size);
+
+			for (let i = 0; i < numBoxes; i += 1) {
+				const boxMat = new THREE.MeshBasicMaterial({
+					color: 0xffffff,
+					wireframe: true,
+				});
+				const box = new THREE.Mesh(boxGeo, boxMat);
+				const p = (i / numBoxes + Math.random() * 0.1) % 1;
+				const pos = tubeGeo.parameters.path.getPointAt(p);
+				pos.x += Math.random() - 0.4;
+				pos.z += Math.random() - 0.4;
+				box.position.copy(pos);
+				const rote = new THREE.Vector3(
+					Math.random() * Math.PI,
+					Math.random() * Math.PI,
+					Math.random() * Math.PI
+				);
+				box.rotation.set(rote.x, rote.y, rote.z);
+				const edges = new THREE.EdgesGeometry(boxGeo, 0.2);
+				const color = new THREE.Color().setHSL(0.7 - p, 1, 0.5);
+				const lineMat = new THREE.LineBasicMaterial({ color });
+				const boxLines = new THREE.LineSegments(edges, lineMat);
+				boxLines.position.copy(pos);
+				boxLines.rotation.set(rote.x, rote.y, rote.z);
+
+				scene.add(boxLines);
+			}
+
+			function updateCamera(tm) {
+				const time = tm * 0.2;
+				const looptime = 8 * 1000;
+				const t = (time % looptime) / looptime;
+				const pos = tubeGeo.parameters.path.getPointAt(t);
+				const lookAt = tubeGeo.parameters.path.getPointAt((t + 0.01) % 1);
+				camera.position.copy(pos);
+				camera.lookAt(lookAt);
+			}
+
+			// Animacja
+			function animate(t = 0) {
+				requestAnimationFrame(animate);
+				updateCamera(t);
+				composer.render(scene, camera);
+				controls.update();
+			}
+
+			animate();
+		}
+	});
+</script>
+
+  <style scoped lang="scss">
+	#home-page {
+		color: #333;
+		overflow-x: hidden;
+	}
+
+	.cta-button {
+		width: 40%;
+	}
+
+	/* Sekcja Hero */
+	.hero {
+		position: relative;
+		background: url("@/assets/shopper.png") center center/cover no-repeat;
+		color: #fff;
+		min-height: 60vh;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+
+		.hero-overlay {
+			position: absolute;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background-color: rgba(0, 0, 0, 0.35);
+		}
+
+		.hero-content {
+			position: relative;
+			max-width: 800px;
+			margin: 0 auto;
+			padding: 60px 20px;
+			text-align: center;
+			z-index: 1;
+
+			h1 {
+				font-size: 3rem;
+				margin-bottom: 15px;
+				line-height: 1.3;
+			}
+
+			h2 {
+				font-size: 1.5rem;
+				font-weight: normal;
+				line-height: 1.4;
+			}
+		}
+	}
+
+	/* Sekcje .features */
+	.features {
+		padding: 60px 20px;
+		background-color: #f9f9f9;
+		text-align: center;
+
+		.container {
+			width: 80%;
+			max-width: 1200px;
+			margin: 0 auto;
+		}
+
+		h2 {
+			font-size: 2rem;
+			margin-bottom: 30px;
+		}
+
+		.extra-text {
+			font-size: 1.1rem;
+			margin-top: 20px;
+			color: #555;
+		}
+
+		.features-container {
+			display: flex;
+			flex-wrap: wrap;
+			justify-content: center;
+			gap: 40px;
+			margin-top: 40px;
+
+			.feature-item {
+				background-color: #fff;
+				padding: 30px;
+				border-radius: 10px;
+				width: 270px;
+				box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+				transition: transform 0.3s, box-shadow 0.3s;
+
+				&:hover {
+					transform: translateY(-6px);
+					box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+				}
+
+				.feature-icon {
+					font-size: 3rem;
+					color: #007bff;
+					margin-bottom: 20px;
+				}
+
+				h3 {
+					font-size: 1.3rem;
+					margin-bottom: 15px;
+					color: #333;
+				}
+
+				p {
+					font-size: 1rem;
+					color: #666;
+					line-height: 1.4;
+				}
+			}
+		}
+	}
+
+	/* Sekcja "Dlaczego my" (możemy dodać inne tło) */
+	.why-us {
+		background-color: #ffffff;
+	}
+
+	/* Sekcja Three.js */
+	.three-section {
+		background-color: #f9f9f9;
+		padding: 60px 20px;
+		text-align: center;
+
+		.three-title {
+			font-size: 2rem;
+			margin-bottom: 30px;
+		}
+
+		.three-container {
+			width: 100%;
+			height: 600px;
+			margin: 40px 0;
+			border: 1px solid #ccc;
+			border-radius: 8px;
+			overflow: hidden;
+		}
+	}
+
+	/* Sekcja CTA */
+	.cta {
+		padding: 60px 20px;
+		background-color: #007bff;
+		color: #fff;
+		text-align: center;
+
+		.container {
+			max-width: 1200px;
+			margin: 0 auto;
+		}
+
+		h2 {
+			font-size: 2rem;
+			margin-bottom: 30px;
+		}
+
+		.cta-button {
+			padding: 15px 30px;
+			font-size: 1.2rem;
+			background-color: #fff;
+			color: #007bff;
+			border: none;
+			border-radius: 5px;
+			cursor: pointer;
+			transition: background-color 0.3s, color 0.3s;
+
+			&:hover {
+				background-color: #e6e6e6;
+			}
+		}
+	}
+
+	/* Responsywność */
+	@media (max-width: 768px) {
+		.cta-button {
+			width: 100%;
+		}
+		.hero-content {
+			padding: 40px 20px;
+
+			h1 {
+				font-size: 2rem;
+			}
+
+			h2 {
+				font-size: 1.2rem;
+			}
+		}
+
+		.features-container {
+			flex-direction: column;
+			align-items: center;
+		}
+
+		.feature-item {
+			width: 90%;
+		}
+
+		.three-container {
+			height: 400px;
+		}
+
+		.cta h2 {
+			font-size: 1.7rem;
+		}
+	}
+</style>
+
+
+==== ./views\Lists.vue ====
+<template>
+	<div id="lists-container">
+		<aside id="lists-menu">
+			<header class="menu-header">
+				<h2>Twoje Listy</h2>
+				<Button class="add-list" @click="addList">
+					<i class="fa-solid fa-plus"></i> Dodaj Listę
+				</Button>
+			</header>
+			<ul class="list-items">
+				<li
+					v-for="list in lists.lists"
+					:key="list.id"
+					@click="setCurrentList(list)"
+					class="list-item"
+				>
+					<span class="list-name">{{ list.name }}</span>
+					<button
+						@click.stop="removeList(list.id)"
+						class="remove-button"
+						aria-label="Usuń Listę"
+					>
+						<i class="fa-solid fa-trash"></i>
+					</button>
+				</li>
+			</ul>
+		</aside>
+		<main id="lists-window">
+			<router-view />
+		</main>
+	</div>
+</template>
+
+<script setup>
+	import { inject } from "vue";
+	import { useRouter } from "vue-router";
+	import Button from "@/components/Button.vue";
+	import axios from "axios";
+	import { useToast } from "vue-toastification";
+
+	const lists = inject("lists");
+	const fetchDataFromApi = inject("fetchDataFromApi");
+	const router = useRouter();
+	const toast = useToast();
+
+	const setCurrentList = (list) => {
+		router.push({ name: "ListDetail", params: { id: list.id } });
+	};
+
+	const addList = async () => {
+		try {
+			const email = localStorage.getItem("authEmail");
+			const password = localStorage.getItem("authPassword");
+			const credentials = btoa(`${email}:${password}`);
+
+			const response = await axios.post(
+				"https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/addNewList",
+				null,
+				{
+					params: {
+						name: "Nowa Lista",
+					},
+					headers: {
+						"Content-Type": "application/json",
+						Authorization: `Basic ${credentials}`,
+					},
+					withCredentials: true,
+				}
+			);
+
+			toast.success("Lista została dodana.");
+			await fetchDataFromApi();
+			const newList = lists.lists.find((list) => list.name === "Nowa Lista");
+			if (newList) {
+				setCurrentList(newList);
+			}
+		} catch (error) {
+			console.error("Error adding new list:", error);
+		}
+	};
+
+	const removeList = async (listId) => {
+		try {
+			await axios.delete(
+				`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/deleteListById/${listId}`,
+				{
+					params: {
+						userId: 1,
+						id: listId,
+					},
+					withCredentials: true,
+				}
+			);
+			toast.error("Lista została usunięta.");
+			await fetchDataFromApi();
+		} catch (error) {
+			console.error("Error deleting list:", error);
+		}
+	};
+
+	fetchDataFromApi();
+</script>
+
+<style scoped lang="scss">
+	#lists-container {
+		display: flex;
+		min-height: 100vh;
+		background-color: #f0f0f0;
+	}
+
+	#lists-menu {
+		width: 300px;
+		background-color: #ffffff;
+		border-right: 1px solid #ddd;
+		display: flex;
+		flex-direction: column;
+		padding: 20px;
+		box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+	}
+
+	.menu-header {
+		display: flex;
+		flex-direction: column;
+		align-items: space-between;
+		justify-content: center;
+		margin-bottom: 20px;
+
+		h2 {
+			font-size: 1.5rem;
+			color: #333;
+		}
+
+		.add-list {
+			display: flex;
+			align-items: center;
+			background-color: #28a745;
+			color: #fff;
+			border: none;
+			padding: 10px 15px;
+			border-radius: 5px;
+			cursor: pointer;
+			font-size: 0.9rem;
+			transition: background-color 0.3s;
+
+			i {
+				margin-right: 5px;
+			}
+
+			&:hover {
+				background-color: #218838;
+			}
+		}
+	}
+
+	.list-items {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		flex-grow: 1;
+		overflow-y: auto;
+	}
+
+	.list-item {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 12px 10px;
+		border-bottom: 1px solid #eee;
+		cursor: pointer;
+		transition: background-color 0.2s;
+
+		&:hover {
+			background-color: #f9f9f9;
+		}
+
+		.list-name {
+			font-size: 1rem;
+			color: #555;
+			flex-grow: 1;
+		}
+
+		.remove-button {
+			background: none;
+			border: none;
+			color: #d9534f;
+			cursor: pointer;
+			font-size: 1rem;
+			padding: 5px;
+			transition: color 0.2s;
+
+			&:hover {
+				color: #c9302c;
+			}
+
+			&:focus {
+				outline: none;
+			}
+		}
+	}
+
+	#lists-window {
+		flex-grow: 1;
+		padding: 30px;
+		background-color: #fafafa;
+		overflow-y: auto;
+	}
+
+	@media (max-width: 768px) {
+		#lists-container {
+			flex-direction: column;
+		}
+
+		#lists-menu {
+			width: 100%;
+			flex-direction: row;
+			overflow-x: auto;
+			padding: 10px;
+			box-shadow: none;
+			border-right: none;
+			border-bottom: 1px solid #ddd;
+
+			header {
+				flex: 2;
+			}
+			ul {
+				flex: 4;
+			}
+		}
+
+		.menu-header {
+			flex-direction: column;
+			align-items: flex-start;
+
+			h2 {
+				margin-bottom: 10px;
+			}
+
+			.add-list {
+				width: 100%;
+				justify-content: center;
+			}
+		}
+
+		.list-items {
+			display: flex;
+			flex-direction: row;
+			overflow-x: auto;
+		}
+
+		.list-item {
+			flex-direction: column;
+			align-items: flex-start;
+		}
+
+		#lists-window {
+			padding: 5px;
+		}
+	}
+</style>
+
+
+==== ./views\LogIn.vue ====
+<template>
+	<div id="login-container">
+		<h1>Logowanie</h1>
+		<form @submit.prevent="handleLogin">
+			<Input
+				id="email"
+				label="Email:"
+				type="email"
+				placeholder="Wprowadź email"
+				v-model="email"
+				:errorMessage="emailError"
+			/>
+			<Input
+				id="password"
+				type="password"
+				label="Hasło:"
+				placeholder="Wprowadź hasło"
+				v-model="password"
+				:errorMessage="passwordError"
+			/>
+			<div class="error-message" v-if="apiError">
+				{{ apiError }}
+			</div>
+			<Button type="primary" :disabled="isLoading">
+				{{ isLoading ? "Logowanie..." : "Zaloguj" }}
+			</Button>
+		</form>
+	</div>
+</template>
+
+<script setup>
+	import { ref } from "vue";
+	import { useRouter } from "vue-router";
+	import axios from "axios";
+	import Input from "../components/Input.vue";
+	import Button from "../components/Button.vue";
+
+	const email = ref("");
+	const password = ref("");
+
+	const emailError = ref("");
+	const passwordError = ref("");
+	const apiError = ref("");
+
+	const isLoading = ref(false);
+	const router = useRouter();
+
+	const validateEmail = (email) => {
+		const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+		return re.test(email);
+	};
+
+	const handleLogin = async () => {
+		emailError.value = "";
+		passwordError.value = "";
+		apiError.value = "";
+
+		let hasError = false;
+
+		if (!email.value) {
+			emailError.value = "Email jest wymagany!";
+			hasError = true;
+		} else if (!validateEmail(email.value)) {
+			emailError.value = "Nieprawidłowy format email!";
+			hasError = true;
+		}
+
+		if (!password.value) {
+			passwordError.value = "Hasło jest wymagane!";
+			hasError = true;
+		}
+
+		if (hasError) return;
+
+		isLoading.value = true;
+
+		try {
+			const response = await axios.post(
+				"https://mylovelyserver.fun:8443/pap_shopping_list/api/auth/login",
+				null,
+				{
+					params: {
+						email: email.value,
+						password: password.value,
+					},
+					withCredentials: false,
+				}
+			);
+
+			if (response.status === 200) {
+				localStorage.setItem("isAuthenticated", "true");
+				localStorage.setItem("authEmail", email.value);
+				localStorage.setItem("authPassword", password.value);
+				router.push({ name: "Lists" });
+			}
+		} catch (error) {
+			if (error.response) {
+				if (error.response.status === 401) {
+					apiError.value = "Nieprawidłowe dane logowania.";
+				} else {
+					apiError.value = "Wystąpił błąd podczas logowania.";
+				}
+			} else {
+				apiError.value = "Brak połączenia z serwerem.";
+			}
+		} finally {
+			isLoading.value = false;
+		}
+	};
+</script>
+
+<style scoped lang="scss">
+	#login-container {
+		max-width: 400px;
+		margin: 50px auto;
+		padding: 20px;
+		border: 1px solid #ccc;
+		border-radius: 5px;
+		background-color: #f9f9f9;
+		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+	}
+
+	h1 {
+		text-align: center;
+		color: #333;
+		margin-bottom: 20px;
+	}
+
+	.error-message {
+		color: red;
+		font-size: 14px;
+		margin-top: 10px;
+		text-align: center;
+	}
+
+	.success-message {
+		color: green;
+		font-size: 14px;
+		margin-top: 10px;
+		text-align: center;
+	}
+</style>
+
+
+==== ./views\Register.vue ====
+<template>
+	<div id="register-container">
+		<h1>Rejestracja</h1>
+		<form @submit.prevent="handleRegister">
+			<Input
+				id="email"
+				label="Email:"
+				type="email"
+				placeholder="Wprowadź email"
+				v-model="email"
+				:errorMessage="emailError"
+			/>
+			<Input
+				id="name"
+				label="Imię:"
+				placeholder="Wprowadź swoje imię"
+				v-model="name"
+				:errorMessage="nameError"
+			/>
+			<Input
+				id="password"
+				type="password"
+				label="Hasło:"
+				placeholder="Wprowadź hasło"
+				v-model="password"
+				:errorMessage="passwordError"
+			/>
+			<Input
+				id="confirm-password"
+				type="password"
+				label="Potwierdź hasło:"
+				placeholder="Wprowadź hasło ponownie"
+				v-model="confirmPassword"
+				:errorMessage="confirmPasswordError"
+			/>
+			<div class="error-message" v-if="apiError">
+				{{ apiError }}
+			</div>
+			<div class="success-message" v-if="successMessage">
+				{{ successMessage }}
+			</div>
+			<Button type="primary" :disabled="isLoading">
+				{{ isLoading ? "Rejestrowanie..." : "Zarejestruj" }}
+			</Button>
+		</form>
+	</div>
+</template>
+
+<script setup>
+	import { ref } from "vue";
+	import { useRouter } from "vue-router";
+	import axios from "axios";
+	import Input from "../components/Input.vue";
+	import Button from "../components/Button.vue";
+
+	const email = ref("");
+	const name = ref("");
+	const password = ref("");
+	const confirmPassword = ref("");
+
+	const emailError = ref("");
+	const nameError = ref("");
+	const passwordError = ref("");
+	const confirmPasswordError = ref("");
+	const apiError = ref("");
+	const successMessage = ref("");
+
+	const isLoading = ref(false);
+	const router = useRouter();
+
+	const validateEmail = (email) => {
+		const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+		return re.test(email);
+	};
+
+	const handleRegister = async () => {
+		emailError.value = "";
+		nameError.value = "";
+		passwordError.value = "";
+		confirmPasswordError.value = "";
+		apiError.value = "";
+		successMessage.value = "";
+
+		let hasError = false;
+
+		if (!email.value) {
+			emailError.value = "Email jest wymagany!";
+			hasError = true;
+		} else if (!validateEmail(email.value)) {
+			emailError.value = "Nieprawidłowy format email!";
+			hasError = true;
+		}
+
+		if (!name.value) {
+			nameError.value = "Imię jest wymagane!";
+			hasError = true;
+		}
+
+		if (!password.value) {
+			passwordError.value = "Hasło jest wymagane!";
+			hasError = true;
+		} else if (password.value.length < 6) {
+			passwordError.value = "Hasło musi mieć co najmniej 6 znaków!";
+			hasError = true;
+		}
+
+		if (!confirmPassword.value) {
+			confirmPasswordError.value = "Potwierdzenie hasła jest wymagane!";
+			hasError = true;
+		} else if (password.value !== confirmPassword.value) {
+			confirmPasswordError.value = "Hasła nie są zgodne!";
+			hasError = true;
+		}
+
+		if (hasError) return;
+
+		const payload = {
+			email: email.value,
+			password: password.value,
+			name: name.value,
+		};
+
+		isLoading.value = true;
+
+		try {
+			const response = await axios.post(
+				"https://mylovelyserver.fun:8443/pap_shopping_list/api/auth/register",
+				payload,
+				{ withCredentials: false }
+			);
+
+			if (response.status === 200) {
+				successMessage.value = `Rejestracja udana dla użytkownika: ${response.data.name}`;
+				await handleLogin(email.value, password.value);
+			}
+		} catch (error) {
+			if (error.response) {
+				if (error.response.status === 400) {
+					apiError.value = "Email jest już w użyciu.";
+				} else {
+					apiError.value = "Wystąpił błąd podczas rejestracji.";
+				}
+			} else {
+				apiError.value = "Brak połączenia z serwerem.";
+			}
+		} finally {
+			isLoading.value = false;
+		}
+	};
+
+	const handleLogin = async (emailArg, passwordArg) => {
+		try {
+			const response = await axios.post(
+				"https://mylovelyserver.fun:8443/pap_shopping_list/api/auth/login",
+				null,
+				{
+					params: {
+						email: emailArg,
+						password: passwordArg,
+					},
+					withCredentials: false,
+				}
+			);
+
+			if (response.status === 200) {
+				localStorage.setItem("isAuthenticated", "true");
+				localStorage.setItem("authEmail", emailArg);
+				localStorage.setItem("authPassword", passwordArg);
+				router.push({ name: "Lists" });
+			}
+		} catch (error) {
+			apiError.value = "Auto Login nie udał się.";
+		} finally {
+			isLoading.value = false;
+		}
+	};
+</script>
+
+<style scoped lang="scss">
+	#register-container {
+		max-width: 400px;
+		margin: 50px auto;
+		padding: 20px;
+		border: 1px solid #ccc;
+		border-radius: 5px;
+		background-color: #f9f9f9;
+		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+	}
+
+	h1 {
+		text-align: center;
+		color: #333;
+		margin-bottom: 20px;
+	}
+
+	.error-message {
+		color: red;
+		font-size: 14px;
+		margin-top: 10px;
+		text-align: center;
+	}
+
+	.success-message {
+		color: green;
+		font-size: 14px;
+		margin-top: 10px;
+		text-align: center;
+	}
+</style>
+
+
+==== ./views\spline.js ====
+import * as THREE from "three";
+const curvePath = [
+	10.136184463414924, -1.374508746897471, 10.384881573913269, 9.1152593889854714, -1.374508746897471,
+	8.5846792797570011, 9.0669355709754882, -1.0665123466336568, 5.8937771631608156, 10.151040177840205,
+	-0.65913653144937956, 3.4340491740541346, 10.806779203170416, 1.8859391007298545, 0.46855774212986023,
+	10.761433540147586, 2.8724172201359197, -1.2811838605587311, 9.6195923104445065, 2.8724172201359197,
+	-3.2833099941904766, 6.9763020889151646, 2.7659257976905427, -4.7591958908830172, 6.0461277891353697,
+	1.0727045302089879, -6.6638740164090482, 7.3472235778544794, -1.8228856326635698, -9.0685043046185623,
+	7.226367212900791, -1.8228856326635698, -10.499536640855691, 5.8354566696263914, -1.8228856326635698,
+	-12.039219379199908, 3.6532357452141353, -0.20463983570573391, -13.87695442281038, -0.30169589630131455,
+	1.5965000671484342, -14.879986418947327, -2.8925694230502157, 2.2971364614427481, -13.892095587598131,
+	-4.537672295357936, 4.5863515759659208, -12.140831652074551, -6.1287913464117594, 5.9653814634119815,
+	-8.9776527318875896, -6.0120301606452813, 4.4081161943855998, -6.712084358394045, -5.2138252159038974,
+	2.820894808418279, -4.4532820412085607, -2.3424712835109611, 2.2032065005086259, -3.0788773693500198,
+	-0.0076956453915433265, 1.8931797788880202, -1.6577070662471063, -0.24767503988481437, 2.8845808465856684,
+	0.073915859214221724, -2.2174044353598896, 4.2415524507318576, 2.215992718290742, -3.4526531678364756,
+	3.0615192023340851, 4.7922404932096558, -3.7356278971556445, 1.4054080369354316, 7.8432021841434629,
+	-3.4003734463804118, 1.1924069108769393, 9.2464090886227073, -1.8851803760476225, 1.5269331003449989,
+	10.306083896408374, 0.01071077144031829, 2.1101821577522295, 10.490880699847727, 0.42562058195647001,
+	2.2759939598834387, 11.613129436580291, 0.096405262182225115, 0.032317784084054391, 16.223455375061565,
+	2.3458797884520433, 0.38907275257695584, 19.91188266079584, 5.7018400098488771, 1.73337964747396,
+	20.615481586999959, 7.9720939736751824, 1.73337964747396, 19.303399329816457, 9.8672362721095652,
+	0.090083018057025177, 16.893338541618121, 11.225959519544134, -1.374508746897471, 14.279002555560753,
+	11.288646925965876, -1.374508746897471, 11.926359497447137, 10.136184463414924, -1.374508746897471,
+	10.384881573913269,
+];
+
+// construct tunnel track
+const points = [];
+const len = curvePath.length;
+for (let p = 0; p < len; p += 3) {
+	points.push(new THREE.Vector3(curvePath[p], curvePath[p + 1], curvePath[p + 2]));
+}
+
+const spline = new THREE.CatmullRomCurve3(points);
+
+export default spline;
+
+
+==== ./views\Lists\ListBody.vue ====
+<template>
+	<div id="content" v-if="list">
+		<section class="list-header">
+			<Input
+				v-model="list.name"
+				:id="list.id.toString()"
+				:label="`List Name: ${list.name}`"
+				:placeholder="`Enter new name for list ${list.name}`"
+				mode="h2"
+				@blur="renameList"
+			/>
+		</section>
+
+		<section class="items-section">
+			<ul class="list-of-items">
+				<li
+					v-for="item in list.items"
+					:key="item.tempId || item.id"
+					class="item"
+				>
+					<div class="item-left">
+						<input
+							type="checkbox"
+							:id="`item${item.id}`"
+							v-model="item.status"
+							@change="changeItemStatus(item)"
+							class="item-checkbox"
+						/>
+
+						<Input
+							class="input-text"
+							v-model="item.data"
+							:id="item.id ? item.id.toString() : ''"
+							placeholder="Enter item name"
+							mode="p"
+							:disabled="item.status"
+							:ref="setInputRef(item.id || item.tempId, 'text')"
+							@blur="updateItem(item)"
+						/>
+
+						<Input
+							class="input-unit"
+							v-model="item.unit"
+							:id="item.id ? item.id.toString() : ''"
+							placeholder="Unit"
+							mode="p"
+							:disabled="item.status"
+							:ref="setInputRef(item.id || item.tempId, 'unit')"
+							@blur="updateItem(item)"
+						/>
+
+						<Input
+							class="input-amount"
+							type="number"
+							v-model="item.quantity"
+							:id="item.id ? item.id.toString() : ''"
+							placeholder="Amount"
+							mode="p"
+							:disabled="item.status"
+							:ref="setInputRef(item.id || item.tempId, 'amount')"
+							@blur="updateItem(item)"
+							@change="updateItem(item)"
+						/>
+					</div>
+					<div class="item-actions">
+						<button
+							@click="removeItem(item.id)"
+							class="remove-button"
+							aria-label="Remove Item"
+						>
+							<i class="fa-solid fa-trash"></i>
+						</button>
+					</div>
+				</li>
+			</ul>
+			<Button class="add-item-button" @click="addItem">Add Item</Button>
+		</section>
+
+		<section class="list-info">
+			<p>Owner: {{ list.owner }}</p>
+			<p>Users: {{ list.users.map((user) => user).join(", ") }}</p>
+			<Button class="add-item-button" @click="shareWith"
+				>Udostępnij</Button
+			>
+		</section>
+	</div>
+
+	<div v-else class="no-list">
+		<p>List not found.</p>
+	</div>
+</template>
+
+<script setup>
+	import { defineProps, inject, computed, nextTick, reactive } from "vue";
+	import "@fortawesome/fontawesome-free/css/all.css";
+	import Button from "@/components/Button.vue";
+	import Input from "@/components/Input.vue";
+	import { Item } from "@/models/Item";
+	import axios from "axios";
+	import { useToast } from "vue-toastification";
+
+	const props = defineProps({
+		id: {
+			type: String,
+			required: true,
+		},
+	});
+
+	const lists = inject("lists");
+	const toast = useToast();
+
+	const getAuthHeaders = () => {
+		const email = localStorage.getItem("authEmail");
+		const password = localStorage.getItem("authPassword");
+		let headers = { "Content-Type": "application/json" };
+		if (email && password) {
+			const credentials = btoa(`${email}:${password}`);
+			headers.Authorization = `Basic ${credentials}`;
+		}
+		return headers;
+	};
+
+	const list = computed(() => {
+		const listId = Number(props.id);
+		return lists.lists.find((l) => l.id === listId) || null;
+	});
+
+	const inputRefs = reactive({});
+
+	const setInputRef = (id, type) => (el) => {
+		inputRefs[`${type}-${id}`] = el;
+	};
+
+	const addItem = async () => {
+		if (list.value) {
+			const tempId = Date.now();
+			const newItem = new Item(null, "", false, "sztuki", 1);
+			newItem.tempId = tempId;
+			list.value.items.push(newItem);
+			await nextTick();
+			const newActualId = await saveNewItem(newItem);
+			if (newActualId) {
+				newItem.id = newActualId;
+
+				if (inputRefs[`text-${tempId}`]) {
+					inputRefs[`text-${newActualId}`] = inputRefs[`text-${tempId}`];
+					delete inputRefs[`text-${tempId}`];
+				}
+
+				if (inputRefs[`text-${newActualId}`]) {
+					inputRefs[`text-${newActualId}`].focus();
+				}
+			}
+		}
+	};
+
+	const removeItem = async (itemId) => {
+		const index = list.value.items.findIndex((i) => i.id === itemId);
+		if (index !== -1) {
+			try {
+				await axios.delete(
+					`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/deleteItemById/${itemId}`,
+					{
+						headers: getAuthHeaders(),
+						withCredentials: true,
+					}
+				);
+				list.value.items.splice(index, 1);
+				delete inputRefs[`text-${itemId}`];
+				delete inputRefs[`unit-${itemId}`];
+				delete inputRefs[`amount-${itemId}`];
+			} catch (error) {
+				console.error("Error deleting item:", error);
+			}
+		}
+	};
+
+	const renameList = async () => {
+		if (list.value) {
+			console.log(list.value.name);
+			try {
+				const response = await axios.put(
+					`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/renameList/${list.value.id}`,
+					list.value.name,
+					{
+						headers: {
+							"Content-Type": "text/plain",
+							...getAuthHeaders(),
+						},
+						params: {
+							newName: list.value.name,
+						},
+						withCredentials: true,
+					}
+				);
+			} catch (error) {
+				console.error("Error renaming list:", error);
+			}
+		}
+	};
+
+	const saveNewItem = async (item) => {
+		try {
+			const response = await axios.post(
+				`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/addNewItem/${list.value.id}`,
+				{
+					data: item.data,
+					status: item.status,
+					unit: item.unit,
+					quantity: item.quantity,
+				},
+				{
+					headers: getAuthHeaders(),
+					withCredentials: true,
+				}
+			);
+			const newId = response.data.items[response.data.items.length - 1].id;
+			return newId;
+		} catch (error) {
+			console.error("Error adding new item:", error);
+			return null;
+		}
+	};
+
+	const updateItem = async (item) => {
+		const exists = list.value.items.some((i) => i.id === item.id);
+		if (!exists) {
+			console.warn(
+				`Item with id ${item.id} does not exist. Skipping update.`
+			);
+			return;
+		}
+
+		if (!item.id) {
+			console.warn("Item does not have a valid id. Skipping update.");
+			return;
+		}
+
+		if (!item.data.trim()) {
+			console.warn("Item text is empty. Removing the item.");
+			await removeItem(item.id);
+			return;
+		}
+
+		try {
+			const response = await axios.put(
+				`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/changeItem/${item.id}`,
+				item,
+				{
+					headers: {
+						"Content-Type": "application/json",
+						...getAuthHeaders(),
+					},
+					withCredentials: true,
+				}
+			);
+		} catch (error) {
+			console.error("Error updating item:", error);
+		}
+	};
+
+	const changeItemStatus = async (item) => {
+		try {
+			await axios.put(
+				`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/changeStateOfItem/${item.id}`,
+				null,
+				{
+					headers: getAuthHeaders(),
+					withCredentials: true,
+				}
+			);
+
+			if (!item.status) {
+				inputRefs[`text-${item.id}`]?.focus();
+			}
+		} catch (error) {
+			console.error("Error changing item status:", error);
+		}
+	};
+
+	const shareWith = async () => {
+		try {
+			await axios.post(
+				`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/addSharedUser/${list.value.id}?email=rafalmironko@gmail.com`,
+				null,
+				{
+					headers: {
+						"Content-Type": "text/plain",
+						...getAuthHeaders(),
+					},
+					withCredentials: true,
+				}
+			);
+		} catch (error) {
+			console.error("Error trying to share this list", error);
+		}
+	};
+
+	// const shareWith = async (user = "krzysztof@baralkiewicz.pl") => {
+	// 	try {
+	// 		await axios.post(
+	// 			`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/addSharedUser/${list.value.id}`,
+	// 			null, // Brak ciała żądania
+	// 			{
+	// 				params: { email: user }, // Dodanie email jako parametr zapytania
+	// 				headers: {
+	// 					"Content-Type": "text/plain",
+	// 					...getAuthHeaders(),
+	// 				},
+	// 				withCredentials: true,
+	// 			}
+	// 		);
+	// 		// Opcjonalnie: odśwież listę po udostępnieniu
+	// 		// await fetchDataFromApi();
+	// 	} catch (error) {
+	// 		console.error("Error trying to share this list", error);
+	// 	}
+	// };
+</script>
+
+<style scoped lang="scss">
+	:root {
+		--primary-color: #007bff;
+		--primary-color-hover: #0056b3;
+		--danger-color: #d9534f;
+		--danger-color-hover: #c9302c;
+		--background-color: #f8f9fa;
+		--menu-background: #ffffff;
+		--text-color: #333333;
+		--text-color-light: #777777;
+		--border-color: #dddddd;
+		--input-background: #ffffff;
+		--input-border: #cccccc;
+		--input-disabled: #e9ecef;
+		--button-background: #28a745;
+		--button-hover: #218838;
+	}
+
+	#content {
+		padding: 20px;
+		background-color: var(--background-color);
+		min-height: 100vh;
+		width: 100%;
+	}
+
+	.list-header {
+		margin-bottom: 30px;
+
+		h2 {
+			font-size: 2rem;
+			color: var(--text-color);
+			margin-bottom: 10px;
+			border-bottom: 2px solid var(--primary-color);
+			padding-bottom: 5px;
+		}
+	}
+
+	.items-section {
+		background-color: var(--menu-background);
+		padding: 20px;
+		border-radius: 8px;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+		width: 100%;
+	}
+
+	.list-of-items {
+		list-style-type: none;
+		padding: 0;
+		margin: 0;
+
+		.item {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			padding: 10px 0;
+			border-bottom: 1px solid var(--border-color);
+			width: 100%;
+			flex-wrap: wrap;
+			transition: background-color 0.3s, transform 0.3s;
+
+			&:hover {
+				background-color: var(--hover-background);
+			}
+
+			.remove-button {
+				transition: color 0.3s, transform 0.3s;
+
+				&:hover {
+					color: var(--danger-color-hover);
+					transform: scale(1.1);
+				}
+			}
+
+			&:last-child {
+				border-bottom: none;
+			}
+
+			.item-left {
+				display: flex;
+				align-items: center;
+				gap: 10px;
+				flex: 1 1 0;
+				min-width: 0;
+			}
+
+			.input-text,
+			.input-unit,
+			.input-amount {
+				flex-shrink: 1;
+				min-width: 0;
+			}
+
+			.item-actions {
+				margin-left: 10px;
+
+				.remove-button {
+					background: none;
+					border: none;
+					color: var(--danger-color);
+					cursor: pointer;
+					font-size: 1.2rem;
+					transition: color 0.3s;
+
+					&:hover {
+						color: var(--danger-color-hover);
+					}
+
+					&:focus {
+						outline: none;
+					}
+				}
+			}
+		}
+	}
+
+	.add-item-button {
+		display: block;
+		width: 100%;
+		margin-top: 20px;
+		padding: 10px 0;
+		background-color: var(--button-background);
+		color: #ffffff;
+		border: none;
+		border-radius: 4px;
+		font-size: 1rem;
+		cursor: pointer;
+		transition: background-color 0.3s;
+
+		display: flex;
+		align-items: center;
+		justify-content: center;
+
+		&:hover {
+			background-color: var(--button-hover);
+		}
+
+		&:focus {
+			outline: none;
+			box-shadow: 0 0 5px rgba(40, 167, 69, 0.5);
+		}
+
+		i {
+			margin-right: 5px;
+		}
+	}
+
+	.list-info {
+		margin-top: 30px;
+		font-size: 1rem;
+		color: var(--text-color-light);
+
+		p {
+			margin: 5px 0;
+		}
+	}
+
+	.no-list {
+		padding: 20px;
+		font-size: 1.2rem;
+		color: var(--text-color-light);
+		text-align: center;
+	}
+
+	@media (max-width: 768px) {
+		#content {
+			padding: 0px;
+		}
+
+		.list-header h2 {
+			font-size: 1.5rem;
+		}
+
+		.items-section {
+			padding: 5px;
+		}
+
+		.add-item-button {
+			font-size: 0.9rem;
+		}
+
+		.list-info {
+			font-size: 0.9rem;
+		}
+	}
+</style>
+
+

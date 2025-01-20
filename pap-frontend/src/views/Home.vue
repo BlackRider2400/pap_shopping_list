@@ -1,68 +1,102 @@
 <template>
 	<div id="home-page">
+		<!-- Sekcja Hero -->
 		<section class="hero">
+			<div class="hero-overlay"></div>
 			<div class="hero-content">
+				<h2>Dla wszystkich ludzi, którzy zapominają wszystko kupić</h2>
 				<h1>
+					W końcu! Przełomowa Metoda Dla Zapominalskich, Żeby Już
+					Nigdy Nie Zapomnieć O Niczym Na Zakupach, Gwarantowane!
+				</h1>
+			</div>
+		</section>
+
+		<!-- Sekcja "Co można zrobić" -->
+		<section class="features">
+			<div class="container">
+				<h2>
 					Też masz czasem tak, że idziesz na zakupy, ale zapominasz,
 					co chciałeś kupić?
-				</h1>
+				</h2>
 				<h2>
 					Zwykle kończy się to tym, że przypomnisz sobie o tym dopiero
 					po powrocie do domu...
 				</h2>
+				<Button class="cta-button" @click="navigateToLists"
+					>Tak, chcę pozbyć się tego problemu!</Button
+				>
 			</div>
 		</section>
 		<section class="features">
-			<h2>Możesz zrobić kilka rzeczy.</h2>
-			<div class="features-container">
-				<div
-					class="feature-item"
-					v-for="amplify in amplifies"
-					:key="amplify.id"
+			<div class="container">
+				<h2>Możesz zrobić kilka rzeczy.</h2>
+				<div class="features-container">
+					<div
+						class="feature-item"
+						v-for="amplify in amplifies"
+						:key="amplify.id"
+					>
+						<i :class="amplify.icon" class="feature-icon"></i>
+						<h3>{{ amplify.title }}</h3>
+						<p v-html="amplify.description"></p>
+					</div>
+				</div>
+				<h2>
+					Ale, no szczerze, żadna z tych opcji nie jest zbyt dobra.
+				</h2>
+				<h2>Właśnie dlatego stworzyliśmy Listę Zakupową 2000!</h2>
+				<h2>
+					Od teraz, kiedy nie chcesz o czymś zapomnieć, możesz to
+					sobie zapisać!
+				</h2>
+				<p>
+					Ta przełomowa metoda opracowana przez naszych najlepszych
+					naukowców z działu R&B sprawiła, że wielu ludzi, robiących
+					na co dzień zakupy, odwróciło swoje życie o 360 stopni!
+				</p>
+				<Button class="cta-button" @click="navigateToLists"
+					>Rozpocznij teraz</Button
 				>
-					<i :class="amplify.icon" class="feature-icon"></i>
-					<h3>{{ amplify.title }}</h3>
-					<p>{{ amplify.description }}</p>
+			</div>
+		</section>
+
+		<!-- Sekcja "Dlaczego my" -->
+		<section class="features why-us">
+			<div class="container">
+				<h2>Dlaczego powienieneś korzystać z naszej listy?</h2>
+				<div class="features-container">
+					<div
+						class="feature-item"
+						v-for="feature in features"
+						:key="feature.id"
+					>
+						<i :class="feature.icon" class="feature-icon"></i>
+						<h3>{{ feature.title }}</h3>
+						<p>{{ feature.description }}</p>
+					</div>
 				</div>
 			</div>
-			<p>Właśnie dlatego stworzyliśmy Listę Zakupową 2000!</p>
-			<p>
-				Od teraz, kiedy nie chcesz o czymś zapomnieć, możesz to sobie
-				zapisać!
-			</p>
-			<h2>
-				Ta przełomowa metoda opracowana przez naszych najlepszych
-				naukowców z działu R&B sprawiła, że wielu ludzi, robiących na co
-				dzień zakupy, odwróciło swoje życie o 360 stopni!
+		</section>
+
+		<!-- Kontenery Three.js (wkomponowane w layout) -->
+		<section class="three-section">
+			<h2 class="three-title">
+				Lista tak dobra, że wywali Cię na księżyc<br />(lub do tunelu
+				czasoprzestrzennego)
 			</h2>
-			<Button class="cta-button" @click="navigateToLists"
-				>Rozpocznij teraz</Button
-			>
+			<div ref="threeContainer" class="three-container"></div>
+			<div ref="threeContainerSecond" class="three-container"></div>
 		</section>
 
-		<section class="features">
-			<h2>Dlaczego warto wybrać nasz produkt?</h2>
-			<div class="features-container">
-				<div
-					class="feature-item"
-					v-for="feature in features"
-					:key="feature.id"
-				>
-					<i :class="feature.icon" class="feature-icon"></i>
-					<h3>{{ feature.title }}</h3>
-					<p>{{ feature.description }}</p>
-				</div>
-			</div>
-		</section>
-
-		<!-- <div ref="threeContainer" class="three-container"></div>
-		<div ref="threeContainerSecond" class="three-container"></div> -->
-
+		<!-- Sekcja CTA na dole strony -->
 		<section class="cta">
-			<h2>Dołącz do tysięcy zadowolonych użytkowników!</h2>
-			<Button class="cta-button" @click="navigateToSignup"
-				>Zarejestruj się teraz</Button
-			>
+			<div class="container">
+				<h2>Dołącz do tysięcy zadowolonych użytkowników!</h2>
+				<Button class="cta-button" @click="navigateToSignup"
+					>Zarejestruj się teraz</Button
+				>
+			</div>
 		</section>
 	</div>
 </template>
@@ -89,7 +123,7 @@
 			icon: "fa-solid fa-list-check",
 			title: "Ucz się na pamięć",
 			description:
-				"Przed pójściem na zakupy uczyć się na pamięć tego, czego potrzebujesz.<br />Jednak to rozwiązanie jest dość niewygodne i zajmuje sporo	czasu.",
+				"Przed pójściem na zakupy uczyć się na pamięć tego, czego potrzebujesz.<br />Jednak to rozwiązanie jest dość niewygodne i zajmuje sporo czasu.",
 		},
 		{
 			id: 2,
@@ -141,12 +175,12 @@
 		router.push("/register");
 	};
 
-	// Three.js code //
-
+	// Three.js kontenery
 	const threeContainer = ref(null);
 	const threeContainerSecond = ref(null);
 
 	onMounted(() => {
+		// Pierwszy kontener
 		if (threeContainer.value) {
 			const w = threeContainer.value.clientWidth;
 			const h = threeContainer.value.clientHeight;
@@ -182,14 +216,11 @@
 			const stars = getStarfield();
 			scene.add(stars);
 
-			// const hemilight = new THREE.HemisphereLight(0xffffff, 0xffffff, 1);
-			// scene.add(hemilight);
-
 			const sunLight = new THREE.DirectionalLight(0xffffff);
 			sunLight.position.set(-2, 0.5, 1.5);
 			scene.add(sunLight);
 
-			function animate(t = 0) {
+			function animate() {
 				requestAnimationFrame(animate);
 				earthMesh.rotation.y += 0.001;
 				renderer.render(scene, camera);
@@ -199,6 +230,7 @@
 			animate();
 		}
 
+		// Drugi kontener
 		if (threeContainerSecond.value) {
 			const w = threeContainerSecond.value.clientWidth;
 			const h = threeContainerSecond.value.clientHeight;
@@ -242,21 +274,20 @@
 			composer.addPass(renderScene);
 			composer.addPass(bloomPass);
 
-			// scene.add(line);
-
-			// create a tube geometry from the spline
+			// Tworzenie geometrii Tube
 			const tubeGeo = new THREE.TubeGeometry(spline, 222, 0.65, 16, true);
 
-			// create edges geometry from the spline
+			// Krawędzie rurki
 			const edges = new THREE.EdgesGeometry(tubeGeo, 0.2);
 			const lineMat = new THREE.LineBasicMaterial({ color: 0xff0000 });
 			const tubeLines = new THREE.LineSegments(edges, lineMat);
 			scene.add(tubeLines);
 
-			// Add boxes
+			// Dodanie kostek
 			const numBoxes = 55;
 			const size = 0.075;
 			const boxGeo = new THREE.BoxGeometry(size, size, size);
+
 			for (let i = 0; i < numBoxes; i += 1) {
 				const boxMat = new THREE.MeshBasicMaterial({
 					color: 0xffffff,
@@ -280,7 +311,7 @@
 				const boxLines = new THREE.LineSegments(edges, lineMat);
 				boxLines.position.copy(pos);
 				boxLines.rotation.set(rote.x, rote.y, rote.z);
-				// scene.add(box);
+
 				scene.add(boxLines);
 			}
 
@@ -294,15 +325,11 @@
 				camera.lookAt(lookAt);
 			}
 
-			// Animation Loop
+			// Animacja
 			function animate(t = 0) {
 				requestAnimationFrame(animate);
 				updateCamera(t);
-
-				// Render Scene
 				composer.render(scene, camera);
-
-				// Update Controls
 				controls.update();
 			}
 
@@ -311,55 +338,78 @@
 	});
 </script>
 
-<style scoped lang="scss">
+  <style scoped lang="scss">
 	#home-page {
-		font-family: "Arial, sans-serif";
 		color: #333;
+		overflow-x: hidden;
 	}
 
-	.three-container {
-		width: 100%;
-		height: 1600px;
-		margin-top: 20px;
-		margin-bottom: 20px;
+	.cta-button {
+		width: 40%;
 	}
 
+	/* Sekcja Hero */
 	.hero {
+		position: relative;
 		background: url("@/assets/shopper.png") center center/cover no-repeat;
 		color: #fff;
-		padding: 100px 20px;
-		text-align: center;
+		min-height: 60vh;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+
+		.hero-overlay {
+			position: absolute;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background-color: rgba(0, 0, 0, 0.35);
+		}
 
 		.hero-content {
+			position: relative;
 			max-width: 800px;
 			margin: 0 auto;
+			padding: 60px 20px;
+			text-align: center;
+			z-index: 1;
 
 			h1 {
 				font-size: 3rem;
-				margin-bottom: 20px;
-				text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+				margin-bottom: 15px;
+				line-height: 1.3;
 			}
 
-			p {
+			h2 {
 				font-size: 1.5rem;
-				margin-bottom: 30px;
-			}
-
-			.cta-button {
-				padding: 15px 30px;
-				font-size: 1.2rem;
+				font-weight: normal;
+				line-height: 1.4;
 			}
 		}
 	}
 
+	/* Sekcje .features */
 	.features {
 		padding: 60px 20px;
 		background-color: #f9f9f9;
 		text-align: center;
 
+		.container {
+			width: 80%;
+			max-width: 1200px;
+			margin: 0 auto;
+		}
+
 		h2 {
-			font-size: 2.5rem;
-			margin-bottom: 40px;
+			font-size: 2rem;
+			margin-bottom: 30px;
+		}
+
+		.extra-text {
+			font-size: 1.1rem;
+			margin-top: 20px;
+			color: #555;
 		}
 
 		.features-container {
@@ -367,17 +417,19 @@
 			flex-wrap: wrap;
 			justify-content: center;
 			gap: 40px;
+			margin-top: 40px;
 
 			.feature-item {
 				background-color: #fff;
 				padding: 30px;
 				border-radius: 10px;
-				width: 250px;
+				width: 270px;
 				box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-				transition: transform 0.3s;
+				transition: transform 0.3s, box-shadow 0.3s;
 
 				&:hover {
-					transform: translateY(-10px);
+					transform: translateY(-6px);
+					box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 				}
 
 				.feature-icon {
@@ -387,26 +439,60 @@
 				}
 
 				h3 {
-					font-size: 1.5rem;
+					font-size: 1.3rem;
 					margin-bottom: 15px;
+					color: #333;
 				}
 
 				p {
 					font-size: 1rem;
 					color: #666;
+					line-height: 1.4;
 				}
 			}
 		}
 	}
 
-	.cta {
+	/* Sekcja "Dlaczego my" (możemy dodać inne tło) */
+	.why-us {
+		background-color: #ffffff;
+	}
+
+	/* Sekcja Three.js */
+	.three-section {
+		background-color: #f9f9f9;
 		padding: 60px 20px;
 		text-align: center;
+
+		.three-title {
+			font-size: 2rem;
+			margin-bottom: 30px;
+		}
+
+		.three-container {
+			width: 100%;
+			height: 600px;
+			margin: 40px 0;
+			border: 1px solid #ccc;
+			border-radius: 8px;
+			overflow: hidden;
+		}
+	}
+
+	/* Sekcja CTA */
+	.cta {
+		padding: 60px 20px;
 		background-color: #007bff;
 		color: #fff;
+		text-align: center;
+
+		.container {
+			max-width: 1200px;
+			margin: 0 auto;
+		}
 
 		h2 {
-			font-size: 2.5rem;
+			font-size: 2rem;
 			margin-bottom: 30px;
 		}
 
@@ -426,26 +512,38 @@
 		}
 	}
 
+	/* Responsywność */
 	@media (max-width: 768px) {
+		.cta-button {
+			width: 100%;
+		}
+		.hero-content {
+			padding: 40px 20px;
+
+			h1 {
+				font-size: 2rem;
+			}
+
+			h2 {
+				font-size: 1.2rem;
+			}
+		}
+
 		.features-container {
 			flex-direction: column;
 			align-items: center;
 		}
 
 		.feature-item {
-			width: 80%;
+			width: 90%;
 		}
 
-		.hero-content h1 {
-			font-size: 2.5rem;
-		}
-
-		.hero-content p {
-			font-size: 1.2rem;
+		.three-container {
+			height: 400px;
 		}
 
 		.cta h2 {
-			font-size: 2rem;
+			font-size: 1.7rem;
 		}
 	}
 </style>

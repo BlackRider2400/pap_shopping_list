@@ -17,11 +17,25 @@
 
 	const lists = Lists.fromJSON([]);
 
+	const getAuthHeaders = () => {
+		const email = localStorage.getItem("authEmail");
+		const password = localStorage.getItem("authPassword");
+		let headers = { "Content-Type": "application/json" };
+		if (email && password) {
+			const credentials = btoa(`${email}:${password}`);
+			headers.Authorization = `Basic ${credentials}`;
+		}
+		return headers;
+	};
+
 	const fetchDataFromApi = async () => {
 		try {
 			const endpoint =
 				"https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/getAllLists";
-			const response = await axios.get(endpoint, { withCredentials: true });
+			const response = await axios.get(endpoint, {
+				headers: getAuthHeaders(),
+				withCredentials: true,
+			});
 			lists.updateFromJSON(response.data);
 		} catch (error) {
 			console.error("Błąd podczas pobierania danych z API:", error);
@@ -30,6 +44,7 @@
 
 	provide("lists", lists);
 	provide("fetchDataFromApi", fetchDataFromApi);
+	provide("getAuthHeaders", getAuthHeaders);
 </script>
 
 <style lang="scss">

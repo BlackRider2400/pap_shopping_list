@@ -40,6 +40,7 @@
 
 	const lists = inject("lists");
 	const fetchDataFromApi = inject("fetchDataFromApi");
+	const getAuthHeaders = inject("getAuthHeaders");
 	const router = useRouter();
 	const toast = useToast();
 
@@ -88,6 +89,7 @@
 						userId: 1,
 						id: listId,
 					},
+					headers: getAuthHeaders(),
 					withCredentials: true,
 				}
 			);

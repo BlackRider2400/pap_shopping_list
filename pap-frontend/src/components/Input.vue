@@ -8,6 +8,8 @@
 			:placeholder="placeholder"
 			:value="modelValue"
 			@input="updateValue"
+			@focus="handleFocus"
+			@blur="handleBlur"
 			:class="{
 				error: !!errorMessage,
 				'h2-like': mode == 'h2',
@@ -15,13 +17,11 @@
 				crossed: crossed,
 			}"
 			:disabled="disabled"
-			@blur="handleBlur"
 		/>
 		<div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
 	</div>
 </template>
-
-  <script setup>
+<script setup>
 	import { defineProps, defineEmits, watch, ref, nextTick } from "vue";
 
 	const props = defineProps({
@@ -67,7 +67,8 @@
 		},
 	});
 
-	const emit = defineEmits(["update:modelValue", "focused", "blur"]);
+	// Zaktualizowana lista emitowanych wydarzeń: zmieniono "focused" na "focus"
+	const emit = defineEmits(["update:modelValue", "focus", "blur"]);
 
 	const updateValue = (event) => {
 		emit("update:modelValue", event.target.value);
@@ -78,7 +79,7 @@
 	const setFocus = () => {
 		if (inputRef.value) {
 			inputRef.value.focus();
-			emit("focused");
+			emit("focus"); // Emitujemy focus przy programowym ustawieniu fokusu
 		}
 	};
 
@@ -91,14 +92,20 @@
 		}
 	);
 
-	const handleBlur = () => {
-		emit("blur");
+	// Nowa funkcja obsługująca focus
+	const handleFocus = (event) => {
+		emit("focus", event);
+	};
+
+	const handleBlur = (event) => {
+		emit("blur", event);
 	};
 
 	defineExpose({
 		focus: setFocus,
 	});
 </script>
+
 
   <style scoped lang="scss">
 	.input-wrapper {
