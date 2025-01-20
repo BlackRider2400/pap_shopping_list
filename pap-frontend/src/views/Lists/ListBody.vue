@@ -107,9 +107,60 @@
 		<section class="list-info">
 			<p>Owner: {{ list.owner }}</p>
 			<p>Users: {{ list.users.map((user) => user).join(", ") }}</p>
-			<Button class="add-item-button" @click="shareWith">
-				Udostępnij
-			</Button>
+
+			<!-- Sekcja udostępniania -->
+			<div class="share-section">
+				<h3>Udostępnij listę</h3>
+
+				<!-- Select do wyboru użytkownika, którego chcemy dodać -->
+				<select
+					v-model="selectedUserToShare"
+					class="share-select"
+					@focus="syncSlow"
+					@blur="syncFast"
+				>
+					<option disabled value="">-- Wybierz użytkownika --</option>
+					<option
+						v-for="email in filteredAllUsers"
+						:key="email"
+						:value="email"
+					>
+						{{ email }}
+					</option>
+				</select>
+				<Button type="primary" class="share-button" @click="shareWith">
+					Udostępnij
+				</Button>
+			</div>
+
+			<!-- Sekcja usuwania udostępnienia (unshare) -->
+			<div class="unshare-section" v-if="list.users.length > 0">
+				<h3>Usuń współdzielenie</h3>
+
+				<!-- Select z aktualnie współdzielonymi userami: -->
+				<select
+					v-model="selectedUserToUnshare"
+					class="share-select"
+					@focus="syncSlow"
+					@blur="syncFast"
+				>
+					<option disabled value="">-- Wybierz użytkownika --</option>
+					<option
+						v-for="email in list.users"
+						:key="email"
+						:value="email"
+					>
+						{{ email }}
+					</option>
+				</select>
+				<Button
+					type="secondary"
+					class="share-button"
+					@click="unshareWith"
+				>
+					Usuń współdzielenie
+				</Button>
+			</div>
 		</section>
 	</div>
 
@@ -118,7 +169,7 @@
 	</div>
 </template>
 
-<script setup>
+  <script setup>
 	import {
 		defineProps,
 		inject,
@@ -128,7 +179,6 @@
 		onMounted,
 		onBeforeUnmount,
 		ref,
-		watch,
 	} from "vue";
 	import "@fortawesome/fontawesome-free/css/all.css";
 	import Button from "@/components/Button.vue";
@@ -147,6 +197,14 @@
 	const lists = inject("lists");
 	const toast = useToast();
 
+	// ======================================
+	// DANE/REFERENCJE DO UDOSTĘPNIANIA
+	// ======================================
+	const allUsers = ref([]); // Tutaj wczytamy z /getAllUsers
+	const selectedUserToShare = ref("");
+	const selectedUserToUnshare = ref("");
+
+	// Pobiera nagłówki autoryzacji
 	const getAuthHeaders = () => {
 		const email = localStorage.getItem("authEmail");
 		const password = localStorage.getItem("authPassword");
@@ -163,6 +221,122 @@
 	const list = computed(() => {
 		return lists.lists.find((l) => l.id === listId.value) || null;
 	});
+
+	// ===========================
+	//  Inicjalne pobranie allUsers
+	// ===========================
+	onMounted(async () => {
+		await fetchAllUsers();
+		syncFast(); // Uruchamiamy domyślnie szybką synchronizację
+	});
+
+	async function fetchAllUsers() {
+		try {
+			const resp = await axios.get(
+				"https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/getAllUsers",
+				{
+					headers: getAuthHeaders(),
+					withCredentials: true,
+				}
+			);
+			// Zakładamy, że zwraca tablicę np. ["user1@example.com", "user2@example.com", ...]
+			allUsers.value = resp.data;
+		} catch (error) {
+			console.error(
+				"Błąd podczas pobierania listy wszystkich użytkowników:",
+				error
+			);
+		}
+	}
+
+	// Filtrujemy, żeby nie pokazywać np. właściciela listy czy zalogowanego usera
+	// (jeśli tak chcesz, możesz również filtrować).
+	const filteredAllUsers = computed(() => {
+		if (!list.value) return [];
+		// Możemy usunąć z listy:
+		// 1) wlasny email (zalogowany)
+		// 2) email właściciela listy
+		// 3) już współdzielonych?
+		// Poniżej prosty przykład: wykluczam właściciela i już-współdzielonych:
+		return allUsers.value.filter(
+			(email) =>
+				email !== list.value.owner && !list.value.users.includes(email)
+		);
+	});
+
+	// Udostępnianie listy
+	const shareWith = async () => {
+		if (!selectedUserToShare.value) {
+			toast.error("Wybierz użytkownika, któremu chcesz udostępnić!");
+			return;
+		}
+		if (!list.value) {
+			toast.error("Nie znaleziono listy – odśwież stronę.");
+			return;
+		}
+		try {
+			const emailToShare = selectedUserToShare.value;
+			await axios.post(
+				`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/addSharedUser/${list.value.id}?email=${emailToShare}`,
+				null,
+				{
+					headers: {
+						"Content-Type": "application/json",
+						...getAuthHeaders(),
+					},
+					withCredentials: true,
+				}
+			);
+			toast.success(
+				`Użytkownik ${emailToShare} został dodany do współdzielenia!`
+			);
+			selectedUserToShare.value = "";
+			// Odswieżamy listę z backendu, by mieć aktualną tablicę users
+			await refreshListData();
+		} catch (error) {
+			console.error("Error trying to share this list", error);
+			toast.error("Błąd podczas udostępniania listy.");
+		}
+	};
+
+	// Usuwanie współdzielenia
+	const unshareWith = async () => {
+		if (!selectedUserToUnshare.value) {
+			toast.error(
+				"Wybierz użytkownika, którego chcesz usunąć ze współdzielenia!"
+			);
+			return;
+		}
+		if (!list.value) {
+			toast.error("Nie znaleziono listy – odśwież stronę.");
+			return;
+		}
+		try {
+			const emailToRemove = selectedUserToUnshare.value;
+			await axios.delete(
+				`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/removeSharedUser/${list.value.id}`,
+				{
+					headers: getAuthHeaders(),
+					params: {
+						email: emailToRemove,
+					},
+					withCredentials: true,
+				}
+			);
+			toast.success(
+				`Użytkownik ${emailToRemove} został usunięty ze współdzielenia!`
+			);
+			selectedUserToUnshare.value = "";
+			await refreshListData();
+		} catch (error) {
+			console.error("Error trying to unshare this list", error);
+			toast.error("Błąd podczas usuwania współdzielenia.");
+		}
+	};
+
+	// ===========================
+	//  Obsługa itemów i listy
+	// ===========================
 
 	const inputRefs = reactive({});
 
@@ -193,51 +367,7 @@
 		}
 	};
 
-	const removeItem = async (itemId) => {
-		const index = list.value.items.findIndex((i) => i.id === itemId);
-		if (index !== -1) {
-			try {
-				await axios.delete(
-					`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/deleteItemById/${itemId}`,
-					{
-						headers: getAuthHeaders(),
-						withCredentials: true,
-					}
-				);
-				list.value.items.splice(index, 1);
-				delete inputRefs[`text-${itemId}`];
-				delete inputRefs[`unit-${itemId}`];
-				delete inputRefs[`amount-${itemId}`];
-			} catch (error) {
-				console.error("Error deleting item:", error);
-			}
-		}
-	};
-
-	const renameList = async () => {
-		if (list.value) {
-			try {
-				await axios.put(
-					`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/renameList/${list.value.id}`,
-					list.value.name,
-					{
-						headers: {
-							"Content-Type": "text/plain",
-							...getAuthHeaders(),
-						},
-						params: {
-							newName: list.value.name,
-						},
-						withCredentials: true,
-					}
-				);
-			} catch (error) {
-				console.error("Error renaming list:", error);
-			}
-		}
-	};
-
-	const saveNewItem = async (item) => {
+	async function saveNewItem(item) {
 		try {
 			const response = await axios.post(
 				`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/addNewItem/${list.value.id}`,
@@ -261,9 +391,30 @@
 			console.error("Error adding new item:", error);
 			return null;
 		}
+	}
+
+	const removeItem = async (itemId) => {
+		const index = list.value.items.findIndex((i) => i.id === itemId);
+		if (index !== -1) {
+			try {
+				await axios.delete(
+					`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/deleteItemById/${itemId}`,
+					{
+						headers: getAuthHeaders(),
+						withCredentials: true,
+					}
+				);
+				list.value.items.splice(index, 1);
+				delete inputRefs[`text-${itemId}`];
+				delete inputRefs[`unit-${itemId}`];
+				delete inputRefs[`amount-${itemId}`];
+			} catch (error) {
+				console.error("Error deleting item:", error);
+			}
+		}
 	};
 
-	const updateItem = async (item) => {
+	async function updateItem(item) {
 		const exists = list.value.items.some((i) => i.id === item.id);
 		if (!exists) {
 			console.warn(
@@ -298,9 +449,9 @@
 		} catch (error) {
 			console.error("Error updating item:", error);
 		}
-	};
+	}
 
-	const changeItemStatus = async (item) => {
+	async function changeItemStatus(item) {
 		try {
 			await axios.put(
 				`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/changeStateOfItem/${item.id}`,
@@ -310,40 +461,41 @@
 					withCredentials: true,
 				}
 			);
-
 			if (!item.status) {
 				inputRefs[`text-${item.id}`]?.focus();
 			}
 		} catch (error) {
 			console.error("Error changing item status:", error);
 		}
-	};
+	}
 
-	const shareWith = async () => {
-		try {
-			await axios.post(
-				`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/addSharedUser/${list.value.id}?email=rafalmironko@gmail.com`,
-				null,
-				{
-					headers: {
-						"Content-Type": "text/plain",
-						...getAuthHeaders(),
-					},
-					withCredentials: true,
-				}
-			);
-		} catch (error) {
-			console.error("Error trying to share this list", error);
+	// Zmiana nazwy listy
+	async function renameList() {
+		if (list.value) {
+			try {
+				await axios.put(
+					`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/renameList/${list.value.id}`,
+					list.value.name,
+					{
+						headers: {
+							"Content-Type": "text/plain",
+							...getAuthHeaders(),
+						},
+						params: {
+							newName: list.value.name,
+						},
+						withCredentials: true,
+					}
+				);
+			} catch (error) {
+				console.error("Error renaming list:", error);
+			}
 		}
-	};
+	}
 
-	/*
-																--------------------------
-																Mechanizm synchronizacji
-																--------------------------
-															*/
-
-	// Funkcja odświeżająca listę
+	// ========================================
+	//  Synchronizacja listy z serwerem
+	// ========================================
 	const refreshListData = async () => {
 		console.log("Wywołanie refreshListData dla listy ID:", listId.value);
 		try {
@@ -357,7 +509,7 @@
 		}
 	};
 
-	const updateListInStore = (freshData) => {
+	function updateListInStore(freshData) {
 		const index = lists.lists.findIndex((l) => l.id === freshData.id);
 		if (index !== -1) {
 			// Aktualizacja istniejącej listy
@@ -380,7 +532,9 @@
 			);
 			// Ewentualnie stwórz nowy obiekt List
 		}
-	};
+	}
+
+	// Mechanizm timed sync
 	let syncInterval = null;
 
 	function startSync(intervalMs) {
@@ -392,18 +546,14 @@
 
 	// Funkcje sterujące interwałem:
 	function syncFast() {
-		console.log("Blur detected - switching to fast sync (100ms)");
+		console.log("Blur detected - switching to fast sync (500ms)");
 		startSync(500);
 	}
 
 	function syncSlow() {
-		console.log("Focus detected - switching to slow sync (5000ms)");
+		console.log("Focus detected - switching to slow sync (20s)");
 		startSync(20000);
 	}
-
-	onMounted(() => {
-		syncFast(); // Uruchamiamy domyślnie szybką synchronizację
-	});
 
 	onBeforeUnmount(() => {
 		if (syncInterval) {
@@ -412,8 +562,7 @@
 	});
 </script>
 
-
-<style scoped lang="scss">
+  <style scoped lang="scss">
 	:root {
 		--primary-color: #007bff;
 		--primary-color-hover: #0056b3;
@@ -503,10 +652,6 @@
 			.input-amount {
 				flex-shrink: 1;
 				min-width: 0;
-
-				&:focus {
-					border-color: red;
-				}
 			}
 
 			.item-actions {
@@ -571,6 +716,33 @@
 		p {
 			margin: 5px 0;
 		}
+
+		.share-section,
+		.unshare-section {
+			margin-top: 20px;
+
+			h3 {
+				margin-bottom: 8px;
+				color: var(--text-color);
+			}
+
+			.share-select {
+				min-width: 180px;
+				margin-right: 10px;
+				padding: 6px;
+				border-radius: 4px;
+				border: 1px solid var(--border-color);
+				outline: none;
+				background-color: #fff;
+				font-size: 14px;
+				color: var(--text-color);
+			}
+
+			.share-button {
+				width: auto;
+				min-width: 120px;
+			}
+		}
 	}
 
 	.no-list {
@@ -599,6 +771,20 @@
 
 		.list-info {
 			font-size: 0.9rem;
+
+			.share-section,
+			.unshare-section {
+				display: flex;
+				flex-direction: column;
+
+				.share-select {
+					margin-bottom: 10px;
+				}
+
+				.share-button {
+					width: 100%;
+				}
+			}
 		}
 	}
 </style>
