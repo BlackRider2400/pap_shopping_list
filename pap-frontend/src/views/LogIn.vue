@@ -25,10 +25,16 @@
 				{{ isLoading ? "Logowanie..." : "Zaloguj" }}
 			</Button>
 		</form>
+		<!-- Dodany link do zapomnianego hasła -->
+		<div class="forgot-password-link">
+			<router-link to="/forgot-password"
+				>Nie pamiętasz hasła?</router-link
+			>
+		</div>
 	</div>
 </template>
 
-<script setup>
+  <script setup>
 	import { ref } from "vue";
 	import { useRouter } from "vue-router";
 	import axios from "axios";
@@ -120,6 +126,10 @@
 		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 	}
 
+	button {
+		margin-top: 20px;
+	}
+
 	h1 {
 		text-align: center;
 		color: #333;
@@ -133,10 +143,15 @@
 		text-align: center;
 	}
 
-	.success-message {
-		color: green;
-		font-size: 14px;
-		margin-top: 10px;
+	.forgot-password-link {
+		margin-top: 15px;
 		text-align: center;
+		a {
+			color: #007bff;
+			text-decoration: none;
+			&:hover {
+				text-decoration: underline;
+			}
+		}
 	}
 </style>

@@ -338,10 +338,10 @@
 	};
 
 	/*
-														--------------------------
-														Mechanizm synchronizacji
-														--------------------------
-													*/
+																--------------------------
+																Mechanizm synchronizacji
+																--------------------------
+															*/
 
 	// Funkcja odświeżająca listę
 	const refreshListData = async () => {
@@ -398,7 +398,7 @@
 
 	function syncSlow() {
 		console.log("Focus detected - switching to slow sync (5000ms)");
-		startSync(10000);
+		startSync(20000);
 	}
 
 	onMounted(() => {

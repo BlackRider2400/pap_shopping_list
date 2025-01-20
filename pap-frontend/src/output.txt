@@ -18,11 +18,25 @@
 
 	const lists = Lists.fromJSON([]);
 
+	const getAuthHeaders = () => {
+		const email = localStorage.getItem("authEmail");
+		const password = localStorage.getItem("authPassword");
+		let headers = { "Content-Type": "application/json" };
+		if (email && password) {
+			const credentials = btoa(`${email}:${password}`);
+			headers.Authorization = `Basic ${credentials}`;
+		}
+		return headers;
+	};
+
 	const fetchDataFromApi = async () => {
 		try {
 			const endpoint =
 				"https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/getAllLists";
-			const response = await axios.get(endpoint, { withCredentials: true });
+			const response = await axios.get(endpoint, {
+				headers: getAuthHeaders(),
+				withCredentials: true,
+			});
 			lists.updateFromJSON(response.data);
 		} catch (error) {
 			console.error("Błąd podczas pobierania danych z API:", error);
@@ -31,6 +45,7 @@
 
 	provide("lists", lists);
 	provide("fetchDataFromApi", fetchDataFromApi);
+	provide("getAuthHeaders", getAuthHeaders);
 </script>
 
 <style lang="scss">
@@ -317,6 +332,8 @@ app.mount("#app");
 			:placeholder="placeholder"
 			:value="modelValue"
 			@input="updateValue"
+			@focus="handleFocus"
+			@blur="handleBlur"
 			:class="{
 				error: !!errorMessage,
 				'h2-like': mode == 'h2',
@@ -324,13 +341,11 @@ app.mount("#app");
 				crossed: crossed,
 			}"
 			:disabled="disabled"
-			@blur="handleBlur"
 		/>
 		<div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
 	</div>
 </template>
-
-  <script setup>
+<script setup>
 	import { defineProps, defineEmits, watch, ref, nextTick } from "vue";
 
 	const props = defineProps({
@@ -376,7 +391,8 @@ app.mount("#app");
 		},
 	});
 
-	const emit = defineEmits(["update:modelValue", "focused", "blur"]);
+	// Zaktualizowana lista emitowanych wydarzeń: zmieniono "focused" na "focus"
+	const emit = defineEmits(["update:modelValue", "focus", "blur"]);
 
 	const updateValue = (event) => {
 		emit("update:modelValue", event.target.value);
@@ -387,7 +403,7 @@ app.mount("#app");
 	const setFocus = () => {
 		if (inputRef.value) {
 			inputRef.value.focus();
-			emit("focused");
+			emit("focus"); // Emitujemy focus przy programowym ustawieniu fokusu
 		}
 	};
 
@@ -400,14 +416,20 @@ app.mount("#app");
 		}
 	);
 
-	const handleBlur = () => {
-		emit("blur");
+	// Nowa funkcja obsługująca focus
+	const handleFocus = (event) => {
+		emit("focus", event);
+	};
+
+	const handleBlur = (event) => {
+		emit("blur", event);
 	};
 
 	defineExpose({
 		focus: setFocus,
 	});
 </script>
+
 
   <style scoped lang="scss">
 	.input-wrapper {
@@ -581,7 +603,7 @@ app.mount("#app");
 
 ==== ./models\Item.js ====
 export class Item {
-	constructor(id, data, status = true, unit = "sztuki", quantity = 1.0) {
+	constructor(id, data, status = true, unit = "GRAM", quantity = 1.0) {
 		this.id = id;
 		this.data = data;
 		this.status = status;
@@ -1336,6 +1358,7 @@ export default function getStarfield({ numStars = 500 } = {}) {
 
 	const lists = inject("lists");
 	const fetchDataFromApi = inject("fetchDataFromApi");
+	const getAuthHeaders = inject("getAuthHeaders");
 	const router = useRouter();
 	const toast = useToast();
 
@@ -1384,6 +1407,7 @@ export default function getStarfield({ numStars = 500 } = {}) {
 						userId: 1,
 						id: listId,
 					},
+					headers: getAuthHeaders(),
 					withCredentials: true,
 				}
 			);
@@ -1956,13 +1980,20 @@ export default spline;
 <template>
 	<div id="content" v-if="list">
 		<section class="list-header">
+			<!-- Dodajemy @focus i @blur na Input -->
 			<Input
 				v-model="list.name"
 				:id="list.id.toString()"
 				:label="`List Name: ${list.name}`"
 				:placeholder="`Enter new name for list ${list.name}`"
 				mode="h2"
-				@blur="renameList"
+				@focus="syncSlow()"
+				@blur="
+					() => {
+						renameList();
+						syncFast();
+					}
+				"
 			/>
 		</section>
 
@@ -1982,6 +2013,7 @@ export default spline;
 							class="item-checkbox"
 						/>
 
+						<!-- Tekst pozycji -->
 						<Input
 							class="input-text"
 							v-model="item.data"
@@ -1990,9 +2022,16 @@ export default spline;
 							mode="p"
 							:disabled="item.status"
 							:ref="setInputRef(item.id || item.tempId, 'text')"
-							@blur="updateItem(item)"
+							@focus="syncSlow()"
+							@blur="
+								() => {
+									updateItem(item);
+									syncFast();
+								}
+							"
 						/>
 
+						<!-- Jednostka -->
 						<Input
 							class="input-unit"
 							v-model="item.unit"
@@ -2001,9 +2040,16 @@ export default spline;
 							mode="p"
 							:disabled="item.status"
 							:ref="setInputRef(item.id || item.tempId, 'unit')"
-							@blur="updateItem(item)"
+							@focus="syncSlow()"
+							@blur="
+								() => {
+									renameList();
+									updateItem(item);
+								}
+							"
 						/>
 
+						<!-- Ilość -->
 						<Input
 							class="input-amount"
 							type="number"
@@ -2013,7 +2059,13 @@ export default spline;
 							mode="p"
 							:disabled="item.status"
 							:ref="setInputRef(item.id || item.tempId, 'amount')"
-							@blur="updateItem(item)"
+							@focus="syncSlow()"
+							@blur="
+								() => {
+									renameList();
+									updateItem(item);
+								}
+							"
 							@change="updateItem(item)"
 						/>
 					</div>
@@ -2034,9 +2086,9 @@ export default spline;
 		<section class="list-info">
 			<p>Owner: {{ list.owner }}</p>
 			<p>Users: {{ list.users.map((user) => user).join(", ") }}</p>
-			<Button class="add-item-button" @click="shareWith"
-				>Udostępnij</Button
-			>
+			<Button class="add-item-button" @click="shareWith">
+				Udostępnij
+			</Button>
 		</section>
 	</div>
 
@@ -2046,7 +2098,17 @@ export default spline;
 </template>
 
 <script setup>
-	import { defineProps, inject, computed, nextTick, reactive } from "vue";
+	import {
+		defineProps,
+		inject,
+		computed,
+		nextTick,
+		reactive,
+		onMounted,
+		onBeforeUnmount,
+		ref,
+		watch,
+	} from "vue";
 	import "@fortawesome/fontawesome-free/css/all.css";
 	import Button from "@/components/Button.vue";
 	import Input from "@/components/Input.vue";
@@ -2075,9 +2137,10 @@ export default spline;
 		return headers;
 	};
 
+	const listId = computed(() => Number(props.id));
+
 	const list = computed(() => {
-		const listId = Number(props.id);
-		return lists.lists.find((l) => l.id === listId) || null;
+		return lists.lists.find((l) => l.id === listId.value) || null;
 	});
 
 	const inputRefs = reactive({});
@@ -2132,9 +2195,8 @@ export default spline;
 
 	const renameList = async () => {
 		if (list.value) {
-			console.log(list.value.name);
 			try {
-				const response = await axios.put(
+				await axios.put(
 					`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/renameList/${list.value.id}`,
 					list.value.name,
 					{
@@ -2165,7 +2227,10 @@ export default spline;
 					quantity: item.quantity,
 				},
 				{
-					headers: getAuthHeaders(),
+					headers: {
+						"Content-Type": "application/json",
+						...getAuthHeaders(),
+					},
 					withCredentials: true,
 				}
 			);
@@ -2198,7 +2263,7 @@ export default spline;
 		}
 
 		try {
-			const response = await axios.put(
+			await axios.put(
 				`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/changeItem/${item.id}`,
 				item,
 				{
@@ -2251,27 +2316,81 @@ export default spline;
 		}
 	};
 
-	// const shareWith = async (user = "krzysztof@baralkiewicz.pl") => {
-	// 	try {
-	// 		await axios.post(
-	// 			`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/addSharedUser/${list.value.id}`,
-	// 			null, // Brak ciała żądania
-	// 			{
-	// 				params: { email: user }, // Dodanie email jako parametr zapytania
-	// 				headers: {
-	// 					"Content-Type": "text/plain",
-	// 					...getAuthHeaders(),
-	// 				},
-	// 				withCredentials: true,
-	// 			}
-	// 		);
-	// 		// Opcjonalnie: odśwież listę po udostępnieniu
-	// 		// await fetchDataFromApi();
-	// 	} catch (error) {
-	// 		console.error("Error trying to share this list", error);
-	// 	}
-	// };
+	/*
+																--------------------------
+																Mechanizm synchronizacji
+																--------------------------
+															*/
+
+	// Funkcja odświeżająca listę
+	const refreshListData = async () => {
+		console.log("Wywołanie refreshListData dla listy ID:", listId.value);
+		try {
+			const response = await axios.get(
+				`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/getListById/${listId.value}`,
+				{ headers: getAuthHeaders(), withCredentials: true }
+			);
+			updateListInStore(response.data);
+		} catch (error) {
+			console.error("Błąd podczas synchronizacji listy:", error);
+		}
+	};
+
+	const updateListInStore = (freshData) => {
+		const index = lists.lists.findIndex((l) => l.id === freshData.id);
+		if (index !== -1) {
+			// Aktualizacja istniejącej listy
+			lists.lists[index].name = freshData.name;
+			lists.lists[index].owner = freshData.owner;
+			lists.lists[index].users = reactive(
+				freshData.sharedUsers?.map((u) => u.email) ?? []
+			);
+			lists.lists[index].items = reactive(
+				freshData.items.map(
+					(it) =>
+						new Item(it.id, it.data, it.status, it.unit, it.quantity)
+				)
+			);
+			console.log(`Lista ID ${freshData.id} zaktualizowana.`);
+		} else {
+			// Lista nie została znaleziona – dodajemy nową listę do store
+			console.warn(
+				"Lista nieznaleziona w store podczas synchronizacji. Dodaję nową listę."
+			);
+			// Ewentualnie stwórz nowy obiekt List
+		}
+	};
+	let syncInterval = null;
+
+	function startSync(intervalMs) {
+		if (syncInterval) {
+			clearInterval(syncInterval);
+		}
+		syncInterval = setInterval(refreshListData, intervalMs);
+	}
+
+	// Funkcje sterujące interwałem:
+	function syncFast() {
+		console.log("Blur detected - switching to fast sync (100ms)");
+		startSync(500);
+	}
+
+	function syncSlow() {
+		console.log("Focus detected - switching to slow sync (5000ms)");
+		startSync(20000);
+	}
+
+	onMounted(() => {
+		syncFast(); // Uruchamiamy domyślnie szybką synchronizację
+	});
+
+	onBeforeUnmount(() => {
+		if (syncInterval) {
+			clearInterval(syncInterval);
+		}
+	});
 </script>
+
 
 <style scoped lang="scss">
 	:root {
@@ -2363,6 +2482,10 @@ export default spline;
 			.input-amount {
 				flex-shrink: 1;
 				min-width: 0;
+
+				&:focus {
+					border-color: red;
+				}
 			}
 
 			.item-actions {
