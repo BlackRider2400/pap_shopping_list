@@ -46,8 +46,9 @@ public class DbService {
         user.setResetTokenExpiry(LocalDateTime.now().plusHours(1));
         userRepository.save(user);
 
-        String resetLink = "https://mylovelyserver.fun:8443/pap_shopping_list/auth/reset-password?token=" + resetToken;
-        emailService.sendEmail(user.getEmail(), "Password Reset Request", "Click the link to reset your password: " + resetLink);
+        String resetLink = "https://mylovelyserver.fun:/pap_shopping_list/reset-password?token=" + resetToken;
+        emailService.sendEmail(user.getEmail(), "Password Reset Request", "Hi!\nClick the link to reset your password: " + resetLink +
+                " \n");
     }
 
     public void resetPassword(String token, String newPassword) {

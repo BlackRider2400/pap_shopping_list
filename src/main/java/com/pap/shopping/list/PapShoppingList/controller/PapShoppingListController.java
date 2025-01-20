@@ -10,10 +10,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/lists")
@@ -113,7 +110,7 @@ public class PapShoppingListController {
     public ResponseEntity<Item> changeStateOfItem(@PathVariable Long id) {
         Long userId = getCurrentUserId();
         if (canAccessList(dbService.getListIdByItemId(id), userId)) {
-            return dbService.getItemByIdAndUserId(id, userId).map(item -> {
+            return dbService.getItemById(id).map(item -> {
                 item.setStatus(!item.getStatus());
                 return ResponseEntity.ok(dbService.saveItem(item));
             }).orElse(ResponseEntity.notFound().build());
@@ -125,7 +122,7 @@ public class PapShoppingListController {
     public ResponseEntity<Item> changeItem(@PathVariable Long id, @RequestBody Item newItem) {
         Long userId = getCurrentUserId();
         if (canAccessList(dbService.getListIdByItemId(id), userId)) {
-            return dbService.getItemByIdAndUserId(id, userId).map(item -> {
+            return dbService.getItemById(id).map(item -> {
                 item.setData(newItem.getData());
                 item.setQuantity(newItem.getQuantity());
                 item.setUnit(newItem.getUnit());
@@ -151,7 +148,7 @@ public class PapShoppingListController {
     @PostMapping("/addNewItem/{listId}")
     public ResponseEntity<Map<String, Object>> addNewItem(@PathVariable Long listId, @RequestBody Item newItem) {
         Long userId = getCurrentUserId();
-        if (canAccessList(listId, userId) && newItem.getData() != null && !newItem.getData().isBlank() ){
+        if (canAccessList(listId, userId)){
             return dbService.getShoppingListByIdAndUserId(listId, userId).map(list -> {
                 if (newItem.getQuantity() == null) {
                     newItem.setQuantity(0.0);
@@ -172,13 +169,19 @@ public class PapShoppingListController {
     @PostMapping("/addSharedUser/{listId}")
     public ResponseEntity<Void> addSharedUser(@PathVariable Long listId, @RequestParam String email) {
         Long userId = getCurrentUserId();
-        if (canAccessList(listId, userId)) {
-            return ResponseEntity.ok().build();
-        }
-        else if (dbService.isOwnerOfList(listId, userId) && dbService.getUserByEmail(email).isPresent() &&
-        !dbService.getUserById(userId).orElseThrow(() -> new IllegalArgumentException("User not found")).getEmail().equals(email)) {
-            dbService.addSharedUserToList(listId, email);
-            return ResponseEntity.ok().build();
+        Optional<User> sharedUser = dbService.getUserByEmail(email);
+
+        try {
+            if(canAccessList(listId, sharedUser.orElseThrow(() -> new IllegalArgumentException("User not found")).getId())){
+                return ResponseEntity.ok().build();
+            }
+            else if (dbService.isOwnerOfList(listId, userId) && dbService.getUserByEmail(email).isPresent() &&
+                    sharedUser.orElseThrow(() -> new IllegalArgumentException("User not found")).getEmail().equals(email)) {
+                dbService.addSharedUserToList(listId, email);
+                return ResponseEntity.ok().build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
         }
         return ResponseEntity.status(403).build();
     }
