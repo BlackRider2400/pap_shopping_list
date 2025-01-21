@@ -6,6 +6,7 @@ import com.pap.shopping.list.PapShoppingList.domain.User;
 import com.pap.shopping.list.PapShoppingList.repository.ItemRepository;
 import com.pap.shopping.list.PapShoppingList.repository.ShoppingListRepository;
 import com.pap.shopping.list.PapShoppingList.repository.UserRepository;
+import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
+@Setter
 public class DbService {
 
     private final UserRepository userRepository;
@@ -35,6 +37,8 @@ public class DbService {
 
     @Autowired
     private EmailService emailService;
+
+
 
 
     public void initiatePasswordReset(String email) {
@@ -99,10 +103,6 @@ public class DbService {
         return shoppingListRepository.save(shoppingList);
     }
 
-    public List<Item> getAllItems() {
-        return itemRepository.findAll();
-    }
-
     public Optional<Item> getItemById(Long id) {
         return itemRepository.findById(id);
     }
@@ -113,20 +113,6 @@ public class DbService {
 
     public void deleteItem(Long id) {
         itemRepository.deleteById(id);
-    }
-
-    public Item changeItemStatus(Long id) {
-        Item item = itemRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Item not found"));
-        item.setStatus(!item.getStatus());
-        return itemRepository.save(item);
-    }
-
-    public Item changeItemValue(Long id, String newValue) {
-        Item item = itemRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Item not found"));
-        item.setData(newValue);
-        return itemRepository.save(item);
     }
 
     public List<ShoppingList> getAllShoppingListsByUserId(Long userId) {
@@ -148,10 +134,6 @@ public class DbService {
         Optional<ShoppingList> sharedList = shoppingListRepository.findByIdAndSharedWithUser(id, userId);
 
         return ownedList.isPresent() ? ownedList : sharedList;
-    }
-
-    public Optional<Item> getItemByIdAndUserId(Long id, Long userId) {
-        return itemRepository.findByIdAndShoppingListOwnerId(id, userId);
     }
 
     public boolean isOwnerOfList(Long listId, Long userId) {

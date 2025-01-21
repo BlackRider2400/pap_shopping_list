@@ -210,21 +210,24 @@ public class PapShoppingListController {
         Map<String, Object> response = new HashMap<>();
         response.put("id", shoppingList.getId());
         response.put("name", shoppingList.getName());
-        response.put("owner", shoppingList.getOwner().getEmail());
-        response.put("sharedUsers", shoppingList.getSharedUsers().stream()
+        response.put("owner", shoppingList.getOwner() != null ? shoppingList.getOwner().getEmail() : "Unknown Owner");
+        response.put("sharedUsers", shoppingList.getSharedUsers() != null
+                ? shoppingList.getSharedUsers().stream()
                 .map(user -> Map.of("email", user.getEmail()))
-                .toList());
-        response.put("items", shoppingList.getItems().stream()
+                .toList()
+                : List.of());
+        response.put("items", shoppingList.getItems() != null
+                ? shoppingList.getItems().stream()
                 .map(item -> {
                     Map<String, Object> itemResponse = new HashMap<>();
                     itemResponse.put("id", item.getId());
                     itemResponse.put("data", item.getData());
                     itemResponse.put("status", item.getStatus());
                     itemResponse.put("quantity", item.getQuantity());
-                    itemResponse.put("unit", item.getUnit() != null ? item.getUnit().toString() : null);
+                    itemResponse.put("unit", item.getUnit());
                     return itemResponse;
-                })
-                .toList());
+                }).toList()
+                : List.of());
         return response;
     }
 }
