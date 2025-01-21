@@ -116,28 +116,11 @@ public class DbService {
     }
 
     public List<ShoppingList> getAllShoppingListsByUserId(Long userId) {
-        List<ShoppingList> ownedLists = shoppingListRepository.findAllByOwnerId(userId);
-        List<ShoppingList> sharedLists = shoppingListRepository.findAllSharedWithUser(userId);
-
-        List<ShoppingList> allLists = new ArrayList<>(ownedLists);
-        for (ShoppingList sharedList : sharedLists) {
-            if (!allLists.contains(sharedList)) {
-                allLists.add(sharedList);
-            }
-        }
-
-        return allLists;
+        return shoppingListRepository.findAllSharedWithUser(userId);
     }
 
     public Optional<ShoppingList> getShoppingListByIdAndUserId(Long id, Long userId) {
-        Optional<ShoppingList> ownedList = shoppingListRepository.findByIdAndOwnerId(id, userId);
-        Optional<ShoppingList> sharedList = shoppingListRepository.findByIdAndSharedWithUser(id, userId);
-
-        return ownedList.isPresent() ? ownedList : sharedList;
-    }
-
-    public boolean isOwnerOfList(Long listId, Long userId) {
-        return shoppingListRepository.existsByIdAndOwnerId(listId, userId);
+        return shoppingListRepository.findByIdAndSharedWithUser(id, userId);
     }
 
     public boolean isSharedUserOfList(Long listId, Long userId) {
@@ -163,6 +146,11 @@ public class DbService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         shoppingList.getSharedUsers().remove(sharedUser);
+
+        if (shoppingList.getSharedUsers().isEmpty()){
+            shoppingListRepository.delete(shoppingList);
+            return;
+        }
         shoppingListRepository.save(shoppingList);
     }
 
@@ -174,6 +162,11 @@ public class DbService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         shoppingList.getSharedUsers().remove(sharedUser);
+
+        if (shoppingList.getSharedUsers().isEmpty()){
+            shoppingListRepository.delete(shoppingList);
+            return;
+        }
         shoppingListRepository.save(shoppingList);
     }
 
@@ -192,12 +185,12 @@ public class DbService {
 
     public void deleteUser(Long userId) {
         List<ShoppingList> lists = getAllShoppingListsByUserId(userId);
-        lists.stream().filter(list ->
-            list.getOwner().getId().equals(userId))
-                        .forEach(list -> deleteShoppingList(list.getId()));
-
         for(ShoppingList list : lists) {
             list.getSharedUsers().removeIf(user -> user.getId().equals(userId));
+            if (list.getSharedUsers().isEmpty()) {
+                shoppingListRepository.deleteById(list.getId());
+                continue;
+            }
             shoppingListRepository.save(list);
         }
 

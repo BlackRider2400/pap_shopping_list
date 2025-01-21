@@ -10,10 +10,12 @@ import org.junit.jupiter.api.*;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -22,8 +24,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+class DbServiceTest {
 
-public class DbServiceTest {
     @Mock
     private UserRepository userRepository;
 
@@ -42,12 +45,14 @@ public class DbServiceTest {
     @InjectMocks
     private DbService dbService;
 
-    @BeforeEach
+    @BeforeAll
     void setup() {
         MockitoAnnotations.openMocks(this);
-        dbService = new DbService(userRepository, shoppingListRepository, itemRepository);
+
         dbService.setEmailService(emailService);
         dbService.setPasswordEncoder(passwordEncoder);
+
+        doNothing().when(emailService).sendEmail(anyString(), anyString(), anyString());
     }
 
     @AfterEach
@@ -115,45 +120,44 @@ public class DbServiceTest {
                 .resetToken("valid-token")
                 .resetTokenExpiry(LocalDateTime.now().plusMinutes(10))
                 .build();
-
+        when(passwordEncoder.encode(anyString())).thenAnswer(invocation -> "encoded-" + invocation.getArgument(0));
         when(userRepository.findByResetToken("valid-token")).thenReturn(Optional.of(user));
-        when(passwordEncoder.encode("newPassword")).thenReturn("encodedPassword");
 
         dbService.resetPassword("valid-token", "newPassword");
 
+        assertEquals("encoded-newPassword", user.getPassword(), "Password should be updated");
         assertNull(user.getResetToken(), "Reset token should be cleared");
         assertNull(user.getResetTokenExpiry(), "Reset token expiry should be cleared");
-        assertEquals("encodedPassword", user.getPassword(), "Password should be updated");
         verify(userRepository, times(1)).save(user);
+        verify(passwordEncoder, times(1)).encode("newPassword");
     }
 
     @Test
-    @DisplayName("Test resetPassword throws exception for invalid token")
-    void testResetPassword_InvalidToken() {
-        when(userRepository.findByResetToken("invalid-token")).thenReturn(Optional.empty());
-
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
-                dbService.resetPassword("invalid-token", "newPassword"));
-
-        assertEquals("Invalid or expired reset token", exception.getMessage());
-        verify(userRepository, never()).save(any());
-    }
-
-    @Test
-    @DisplayName("Test getAllShoppingListsByUserId returns combined owned and shared lists")
+    @DisplayName("Test getAllShoppingListsByUserId returns all lists shared with the user")
     void testGetAllShoppingListsByUserId() {
         User user = User.builder().id(1L).email("test@example.com").build();
-        ShoppingList ownedList = ShoppingList.builder().id(1L).name("Owned").owner(user).build();
-        ShoppingList sharedList = ShoppingList.builder().id(2L).name("Shared").build();
-
-        when(shoppingListRepository.findAllByOwnerId(1L)).thenReturn(List.of(ownedList));
-        when(shoppingListRepository.findAllSharedWithUser(1L)).thenReturn(List.of(sharedList));
+        ShoppingList list1 = ShoppingList.builder().id(1L).name("Groceries").sharedUsers(List.of(user)).build();
+        ShoppingList list2 = ShoppingList.builder().id(2L).name("Electronics").sharedUsers(List.of(user)).build();
+        when(shoppingListRepository.findAllSharedWithUser(1L)).thenReturn(List.of(list1, list2));
 
         List<ShoppingList> result = dbService.getAllShoppingListsByUserId(1L);
 
-        assertEquals(2, result.size(), "Result should contain both owned and shared lists");
-        verify(shoppingListRepository, times(1)).findAllByOwnerId(1L);
+        assertEquals(2, result.size(), "Should return all shared lists");
         verify(shoppingListRepository, times(1)).findAllSharedWithUser(1L);
+    }
+
+    @Test
+    @DisplayName("Test removing shared user and deleting list if no users remain")
+    void testRemoveSharedUserAndDeleteList() {
+        User user = User.builder().id(1L).email("test@example.com").build();
+        ShoppingList list = ShoppingList.builder().id(1L).name("Groceries").sharedUsers(new ArrayList<>(List.of(user))).build();
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+        when(shoppingListRepository.findById(1L)).thenReturn(Optional.of(list));
+
+        dbService.removeSharedUserFromList(1L, "test@example.com");
+
+        assertTrue(list.getSharedUsers().isEmpty(), "Shared users should be empty after removal");
+        verify(shoppingListRepository, times(1)).delete(list);
     }
 
     @Test

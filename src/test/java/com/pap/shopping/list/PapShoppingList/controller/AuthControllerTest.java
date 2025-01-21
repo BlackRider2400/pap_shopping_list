@@ -15,6 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.*;
 
+
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class AuthControllerTest {
     @Mock

@@ -35,7 +35,7 @@ public class PapShoppingListController {
     }
 
     private boolean canAccessList(Long listId, Long userId) {
-        return dbService.isOwnerOfList(listId, userId) || dbService.isSharedUserOfList(listId, userId);
+        return dbService.isSharedUserOfList(listId, userId);
     }
 
     @GetMapping("/getAllUsers")
@@ -68,10 +68,7 @@ public class PapShoppingListController {
     @DeleteMapping("/deleteListById/{id}")
     public ResponseEntity<Void> deleteListById(@PathVariable Long id) {
         Long userId = getCurrentUserId();
-        if (dbService.isOwnerOfList(id, userId)) {
-            dbService.deleteShoppingList(id);
-            return ResponseEntity.ok().build();
-        } else if(dbService.isSharedUserOfList(id, userId)){
+        if(canAccessList(id, userId)){
             dbService.removeSharedUserFromList(id, userId);
             return ResponseEntity.ok().build();
         }
@@ -81,18 +78,13 @@ public class PapShoppingListController {
     @PostMapping("/addNewList")
     public ResponseEntity<Map<String, Object>> addNewList(@RequestParam String name) {
         Long userId = getCurrentUserId();
-        User owner = dbService.getUserById(userId)
+        User user = dbService.getUserById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
-        if (name == null || name.isBlank()) {
-            return ResponseEntity.badRequest().build();
-        }
 
         ShoppingList newList = ShoppingList.builder()
                 .name(name)
-                .owner(owner)
+                .sharedUsers(List.of(user))
                 .items(new ArrayList<>())
-                .sharedUsers(new ArrayList<>())
                 .build();
 
         ShoppingList savedList = dbService.saveShoppingList(newList);
@@ -138,7 +130,7 @@ public class PapShoppingListController {
     @PutMapping("/renameList/{id}")
     public ResponseEntity<Map<String, Object>> renameList(@PathVariable Long id, @RequestParam String newName) {
         Long userId = getCurrentUserId();
-        if (dbService.isOwnerOfList(id, userId)) {
+        if (canAccessList(id, userId)) {
             return dbService.getShoppingListByIdAndUserId(id, userId).map(list -> {
                 list.setName(newName);
                 ShoppingList updatedList = dbService.saveShoppingList(list);
@@ -174,17 +166,9 @@ public class PapShoppingListController {
         Long userId = getCurrentUserId();
         Optional<User> sharedUser = dbService.getUserByEmail(email);
 
-        try {
-            if(canAccessList(listId, sharedUser.orElseThrow(() -> new IllegalArgumentException("User not found")).getId())){
-                return ResponseEntity.ok().build();
-            }
-            else if (dbService.isOwnerOfList(listId, userId) && dbService.getUserByEmail(email).isPresent() &&
-                    sharedUser.orElseThrow(() -> new IllegalArgumentException("User not found")).getEmail().equals(email)) {
-                dbService.addSharedUserToList(listId, email);
-                return ResponseEntity.ok().build();
-            }
-        } catch (Exception e) {
-            return ResponseEntity.notFound().build();
+        if (canAccessList(listId, userId) && sharedUser.isPresent()) {
+            dbService.addSharedUserToList(listId, email);
+            return ResponseEntity.ok().build();
         }
         return ResponseEntity.status(403).build();
     }
@@ -192,7 +176,7 @@ public class PapShoppingListController {
     @DeleteMapping("/removeSharedUser/{listId}")
     public ResponseEntity<Void> removeSharedUser(@PathVariable Long listId, @RequestParam String email) {
         Long userId = getCurrentUserId();
-        if (dbService.isOwnerOfList(listId, userId)) {
+        if (canAccessList(listId, userId)) {
             dbService.removeSharedUserFromList(listId, email);
             return ResponseEntity.ok().build();
         }
@@ -210,24 +194,17 @@ public class PapShoppingListController {
         Map<String, Object> response = new HashMap<>();
         response.put("id", shoppingList.getId());
         response.put("name", shoppingList.getName());
-        response.put("owner", shoppingList.getOwner() != null ? shoppingList.getOwner().getEmail() : "Unknown Owner");
-        response.put("sharedUsers", shoppingList.getSharedUsers() != null
-                ? shoppingList.getSharedUsers().stream()
+        response.put("sharedUsers", shoppingList.getSharedUsers().stream()
                 .map(user -> Map.of("email", user.getEmail()))
-                .toList()
-                : List.of());
-        response.put("items", shoppingList.getItems() != null
-                ? shoppingList.getItems().stream()
-                .map(item -> {
-                    Map<String, Object> itemResponse = new HashMap<>();
-                    itemResponse.put("id", item.getId());
-                    itemResponse.put("data", item.getData());
-                    itemResponse.put("status", item.getStatus());
-                    itemResponse.put("quantity", item.getQuantity());
-                    itemResponse.put("unit", item.getUnit());
-                    return itemResponse;
-                }).toList()
-                : List.of());
+                .toList());
+        response.put("items", shoppingList.getItems().stream()
+                .map(item -> Map.of(
+                        "id", item.getId(),
+                        "data", item.getData(),
+                        "status", item.getStatus(),
+                        "quantity", item.getQuantity(),
+                        "unit", item.getUnit()))
+                .toList());
         return response;
     }
 }

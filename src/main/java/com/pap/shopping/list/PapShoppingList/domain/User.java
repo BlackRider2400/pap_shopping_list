@@ -34,10 +34,6 @@ public class User {
 
     private LocalDateTime resetTokenExpiry;
 
-    @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL)
-    @JsonIgnore
-    private List<ShoppingList> ownedLists = new ArrayList<>();
-
     @ManyToMany(mappedBy = "sharedUsers")
     @JsonIgnore
     private List<ShoppingList> sharedLists = new ArrayList<>();
