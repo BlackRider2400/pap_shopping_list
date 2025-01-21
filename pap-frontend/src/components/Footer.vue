@@ -18,7 +18,20 @@
 					<li>
 						<router-link to="/lists">Listy Zakupowe</router-link>
 					</li>
-					<li @click="handleLogout" class="pointer-class">Logout</li>
+					<li
+						v-if="isAuthenticated"
+						@click="handleLogout"
+						class="pointer-class"
+					>
+						Logout
+					</li>
+					<li
+						v-if="isAuthenticated"
+						@click="handleDeleteAccount"
+						class="pointer-class"
+					>
+						Usuń konto
+					</li>
 				</ul>
 			</div>
 			<div class="footer-section">
@@ -36,20 +49,80 @@
 	</footer>
 </template>
 
-<script setup>
-	import { useRouter } from "vue-router";
+  <script setup>
+	import { ref, watch } from "vue";
+	import { useRouter, useRoute } from "vue-router";
+	import axios from "axios";
+	import { useToast } from "vue-toastification";
 
+	const route = useRoute();
 	const router = useRouter();
+	const toast = useToast();
+
+	const isAuthenticated = ref(localStorage.getItem("isAuthenticated") === "true");
+
+	watch(
+		() => route.fullPath,
+		() => {
+			setTimeout(() => {
+				isAuthenticated.value =
+					localStorage.getItem("isAuthenticated") === "true";
+			}, 1000);
+		}
+	);
 
 	const handleLogout = () => {
 		localStorage.removeItem("isAuthenticated");
 		localStorage.removeItem("authEmail");
 		localStorage.removeItem("authPassword");
+		isAuthenticated.value = false;
 		router.push({ name: "LogIn" });
+	};
+
+	const getAuthHeaders = () => {
+		const email = localStorage.getItem("authEmail");
+		const password = localStorage.getItem("authPassword");
+		let headers = { "Content-Type": "application/json" };
+		if (email && password) {
+			const credentials = btoa(`${email}:${password}`);
+			headers.Authorization = `Basic ${credentials}`;
+		}
+		return headers;
+	};
+
+	const handleDeleteAccount = async () => {
+		const confirmation = window.confirm(
+			"Czy na pewno chcesz usunąć swoje konto? Tej operacji nie można cofnąć."
+		);
+		if (!confirmation) return;
+
+		try {
+			const response = await axios.delete(
+				"https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/deleteUser",
+				{
+					headers: getAuthHeaders(),
+					withCredentials: true,
+				}
+			);
+
+			if (response.status === 204) {
+				toast.success("Konto zostało usunięte.");
+				localStorage.removeItem("isAuthenticated");
+				localStorage.removeItem("authEmail");
+				localStorage.removeItem("authPassword");
+				isAuthenticated.value = false;
+				router.push({ name: "LogIn" });
+			}
+		} catch (error) {
+			console.error("Błąd podczas usuwania konta:", error);
+			toast.error(
+				"Wystąpił błąd podczas usuwania konta. Spróbuj jeszcze raz."
+			);
+		}
 	};
 </script>
 
-<style scoped lang="scss">
+  <style scoped lang="scss">
 	.footer {
 		background-color: #333;
 		color: white;

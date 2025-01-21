@@ -78,7 +78,6 @@
 
 
 ==== ./main.js ====
-// main.js
 import { createApp } from "vue";
 import App from "./App.vue";
 import router from "./router";
@@ -86,21 +85,15 @@ import Toast, { POSITION } from "vue-toastification";
 import "vue-toastification/dist/index.css";
 import axios from "axios";
 import "./style.scss";
-import Cookies from "js-cookie"; // Dodano import js-cookie
 
 const app = createApp(App);
 
-// Ustawienie podstawowej ścieżki API
-
-// Ustawienie Axios do wysyłania ciasteczek z żądaniami
 axios.defaults.withCredentials = true;
 
-// Dodanie interceptora do sprawdzania odpowiedzi i obsługi błędów globalnych
 axios.interceptors.response.use(
 	(response) => response,
 	(error) => {
 		if (error.response && error.response.status === 401) {
-			// Możesz dodać globalną obsługę błędów, np. przekierowanie do logowania
 			router.push({ name: "LogIn" });
 		}
 		return Promise.reject(error);
@@ -391,7 +384,6 @@ app.mount("#app");
 		},
 	});
 
-	// Zaktualizowana lista emitowanych wydarzeń: zmieniono "focused" na "focus"
 	const emit = defineEmits(["update:modelValue", "focus", "blur"]);
 
 	const updateValue = (event) => {
@@ -403,7 +395,7 @@ app.mount("#app");
 	const setFocus = () => {
 		if (inputRef.value) {
 			inputRef.value.focus();
-			emit("focus"); // Emitujemy focus przy programowym ustawieniu fokusu
+			emit("focus");
 		}
 	};
 
@@ -416,7 +408,6 @@ app.mount("#app");
 		}
 	);
 
-	// Nowa funkcja obsługująca focus
 	const handleFocus = (event) => {
 		emit("focus", event);
 	};
@@ -495,7 +486,7 @@ app.mount("#app");
 <template>
 	<nav>
 		<div id="logo">
-			<router-link to="/">Logo jest tutaj</router-link>
+			<router-link to="/">Shoppin' List 2000</router-link>
 		</div>
 		<div id="burger" @click="toggleMenu">☰</div>
 		<div id="link-tree-overlay" :class="{ active: isMenuOpen }">
@@ -562,25 +553,23 @@ app.mount("#app");
 		}
 	}
 
-	/* Pełnoekranowe pokrycie po otwarciu menu */
 	#link-tree-overlay {
 		position: fixed;
 		top: 0;
 		left: 0;
 		width: 100%;
 		height: 100%;
-		background-color: rgba(0, 0, 0, 0.9); /* Półprzezroczyste tło */
-		display: none; /* Domyślnie ukryte */
+		background-color: rgba(0, 0, 0, 0.9);
+		display: none;
 		justify-content: center;
 		align-items: center;
 		z-index: 15;
 
 		&.active {
-			display: flex; /* Pokaż menu */
+			display: flex;
 		}
 	}
 
-	/* Styl menu linków */
 	#link-tree {
 		display: flex;
 		flex-direction: column;
@@ -658,9 +647,7 @@ export class Lists {
 
 
 ==== ./router\index.js ====
-// router/index.js
 import { createRouter, createWebHistory } from "vue-router";
-import Cookies from "js-cookie";
 
 const routes = [
 	{
@@ -683,14 +670,14 @@ const routes = [
 		redirect: "/lists/1",
 		name: "Lists",
 		component: () => import("../views/Lists.vue"),
-		meta: { requiresAuth: true }, // Wymaga autoryzacji
+		meta: { requiresAuth: true },
 		children: [
 			{
 				path: ":id",
 				name: "ListDetail",
 				component: () => import("../views/Lists/ListBody.vue"),
 				props: true,
-				meta: { requiresAuth: true }, // Wymaga autoryzacji
+				meta: { requiresAuth: true },
 			},
 		],
 	},
@@ -711,7 +698,6 @@ const router = createRouter({
 	routes,
 });
 
-// Globalny strażnik nawigacyjny
 router.beforeEach((to, from, next) => {
 	const requiresAuth = to.matched.some((record) => record.meta.requiresAuth);
 	const isAuthenticated = localStorage.getItem("isAuthenticated") === "true";
@@ -785,7 +771,6 @@ export default router;
 		isLoading.value = true;
 
 		try {
-			// Wysyłamy żądanie POST /request-password-reset z parametrem email
 			const response = await axios.post(
 				"https://mylovelyserver.fun:8443/pap_shopping_list/api/auth/request-password-reset",
 				null,
@@ -793,18 +778,15 @@ export default router;
 					params: {
 						email: email.value,
 					},
-					withCredentials: false, // Zwykle nie trzeba cookies w zapomnianym haśle
+					withCredentials: false,
 				}
 			);
 
 			if (response.status === 200) {
-				// Serwer zwraca "If the email exists, a password reset link will be sent."
 				infoMessage.value =
 					"Jeśli email istnieje w bazie, wysłaliśmy link resetujący hasło.";
 			}
 		} catch (error) {
-			// W /request-password-reset i tak zwykle jest 200,
-			// ale gdyby backend inaczej to obsługiwał (np. 4xx), można to przechwycić
 			apiError.value = "Wystąpił problem z wysłaniem żądania resetu hasła.";
 		} finally {
 			isLoading.value = false;
@@ -898,7 +880,6 @@ export default function getStarfield({ numStars = 500 } = {}) {
 ==== ./views\Home.vue ====
 <template>
 	<div id="home-page">
-		<!-- Sekcja Hero -->
 		<section class="hero">
 			<div class="hero-overlay"></div>
 			<div class="hero-content">
@@ -910,7 +891,6 @@ export default function getStarfield({ numStars = 500 } = {}) {
 			</div>
 		</section>
 
-		<!-- Sekcja "Co można zrobić" -->
 		<section class="features">
 			<div class="container">
 				<h2>
@@ -959,7 +939,6 @@ export default function getStarfield({ numStars = 500 } = {}) {
 			</div>
 		</section>
 
-		<!-- Sekcja "Dlaczego my" -->
 		<section class="features why-us">
 			<div class="container">
 				<h2>Dlaczego powienieneś korzystać z naszej listy?</h2>
@@ -977,7 +956,6 @@ export default function getStarfield({ numStars = 500 } = {}) {
 			</div>
 		</section>
 
-		<!-- Kontenery Three.js (wkomponowane w layout) -->
 		<section class="three-section">
 			<h2 class="three-title">
 				Lista tak dobra, że wywali Cię na księżyc<br />(lub do tunelu
@@ -987,7 +965,6 @@ export default function getStarfield({ numStars = 500 } = {}) {
 			<div ref="threeContainerSecond" class="three-container"></div>
 		</section>
 
-		<!-- Sekcja CTA na dole strony -->
 		<section class="cta">
 			<div class="container">
 				<h2>Dołącz do tysięcy zadowolonych użytkowników!</h2>
@@ -1133,14 +1110,12 @@ export default function getStarfield({ numStars = 500 } = {}) {
 			const w = threeContainerSecond.value.clientWidth;
 			const h = threeContainerSecond.value.clientHeight;
 
-			// Renderer
 			const renderer = new THREE.WebGLRenderer({ antialias: true });
 			renderer.setSize(w, h);
 			renderer.toneMapping = THREE.ACESFilmicToneMapping;
 			renderer.outputColorSpace = THREE.SRGBColorSpace;
 			threeContainerSecond.value.appendChild(renderer.domElement);
 
-			// Camera
 			const fov = 75;
 			const aspect = w / h;
 			const near = 0.1;
@@ -1148,16 +1123,13 @@ export default function getStarfield({ numStars = 500 } = {}) {
 			const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
 			camera.position.z = 30;
 
-			// Scene
 			const scene = new THREE.Scene();
 			scene.fog = new THREE.FogExp2(0x000000, 0.3);
 
-			// Controls
 			const controls = new OrbitControls(camera, renderer.domElement);
 			controls.enableDamping = true;
 			controls.dampingFactor = 0.03;
 
-			// Post processing
 			const renderScene = new RenderPass(scene, camera);
 			const bloomPass = new UnrealBloomPass(
 				new THREE.Vector2(w, h),
@@ -1172,16 +1144,13 @@ export default function getStarfield({ numStars = 500 } = {}) {
 			composer.addPass(renderScene);
 			composer.addPass(bloomPass);
 
-			// Tworzenie geometrii Tube
 			const tubeGeo = new THREE.TubeGeometry(spline, 222, 0.65, 16, true);
 
-			// Krawędzie rurki
 			const edges = new THREE.EdgesGeometry(tubeGeo, 0.2);
 			const lineMat = new THREE.LineBasicMaterial({ color: 0xff0000 });
 			const tubeLines = new THREE.LineSegments(edges, lineMat);
 			scene.add(tubeLines);
 
-			// Dodanie kostek
 			const numBoxes = 55;
 			const size = 0.075;
 			const boxGeo = new THREE.BoxGeometry(size, size, size);
@@ -1223,7 +1192,6 @@ export default function getStarfield({ numStars = 500 } = {}) {
 				camera.lookAt(lookAt);
 			}
 
-			// Animacja
 			function animate(t = 0) {
 				requestAnimationFrame(animate);
 				updateCamera(t);
@@ -1246,7 +1214,6 @@ export default function getStarfield({ numStars = 500 } = {}) {
 		width: 40%;
 	}
 
-	/* Sekcja Hero */
 	.hero {
 		position: relative;
 		background: url("@/assets/shopper.png") center center/cover no-repeat;
@@ -1287,7 +1254,6 @@ export default function getStarfield({ numStars = 500 } = {}) {
 		}
 	}
 
-	/* Sekcje .features */
 	.features {
 		padding: 60px 20px;
 		background-color: #f9f9f9;
@@ -1351,12 +1317,10 @@ export default function getStarfield({ numStars = 500 } = {}) {
 		}
 	}
 
-	/* Sekcja "Dlaczego my" (możemy dodać inne tło) */
 	.why-us {
 		background-color: #ffffff;
 	}
 
-	/* Sekcja Three.js */
 	.three-section {
 		background-color: #f9f9f9;
 		padding: 60px 20px;
@@ -1377,7 +1341,6 @@ export default function getStarfield({ numStars = 500 } = {}) {
 		}
 	}
 
-	/* Sekcja CTA */
 	.cta {
 		padding: 60px 20px;
 		background-color: #007bff;
@@ -1410,7 +1373,6 @@ export default function getStarfield({ numStars = 500 } = {}) {
 		}
 	}
 
-	/* Responsywność */
 	@media (max-width: 768px) {
 		.cta-button {
 			width: 100%;
@@ -2135,7 +2097,6 @@ export default function getStarfield({ numStars = 500 } = {}) {
 	const successMessage = ref("");
 	const isLoading = ref(false);
 
-	// Pobieramy token z query param
 	let token = "";
 
 	onMounted(() => {
@@ -2188,7 +2149,6 @@ export default function getStarfield({ numStars = 500 } = {}) {
 
 			if (response.status === 200) {
 				successMessage.value = "Hasło zostało pomyślnie zmienione!";
-				// Opcjonalnie przekieruj użytkownika do logowania po 2-3 sekundach
 				setTimeout(() => {
 					router.push({ name: "LogIn" });
 				}, 2000);
@@ -2290,7 +2250,6 @@ export default spline;
 <template>
 	<div id="content" v-if="list">
 		<section class="list-header">
-			<!-- Dodajemy @focus i @blur na Input -->
 			<Input
 				v-model="list.name"
 				:id="list.id.toString()"
@@ -2323,7 +2282,6 @@ export default spline;
 							class="item-checkbox"
 						/>
 
-						<!-- Tekst pozycji -->
 						<Input
 							class="input-text"
 							v-model="item.data"
@@ -2341,7 +2299,6 @@ export default spline;
 							"
 						/>
 
-						<!-- Jednostka -->
 						<Input
 							class="input-unit"
 							v-model="item.unit"
@@ -2359,7 +2316,6 @@ export default spline;
 							"
 						/>
 
-						<!-- Ilość -->
 						<Input
 							class="input-amount"
 							type="number"
@@ -2396,9 +2352,56 @@ export default spline;
 		<section class="list-info">
 			<p>Owner: {{ list.owner }}</p>
 			<p>Users: {{ list.users.map((user) => user).join(", ") }}</p>
-			<Button class="add-item-button" @click="shareWith">
-				Udostępnij
-			</Button>
+
+			<div class="share-section">
+				<h3>Udostępnij listę</h3>
+
+				<select
+					v-model="selectedUserToShare"
+					class="share-select"
+					@focus="syncSlow"
+					@blur="syncFast"
+				>
+					<option disabled value="">-- Wybierz użytkownika --</option>
+					<option
+						v-for="email in filteredAllUsers"
+						:key="email"
+						:value="email"
+					>
+						{{ email }}
+					</option>
+				</select>
+				<Button type="primary" class="share-button" @click="shareWith">
+					Udostępnij
+				</Button>
+			</div>
+
+			<div class="unshare-section" v-if="list.users.length > 0">
+				<h3>Usuń współdzielenie</h3>
+
+				<select
+					v-model="selectedUserToUnshare"
+					class="share-select"
+					@focus="syncSlow"
+					@blur="syncFast"
+				>
+					<option disabled value="">-- Wybierz użytkownika --</option>
+					<option
+						v-for="email in list.users"
+						:key="email"
+						:value="email"
+					>
+						{{ email }}
+					</option>
+				</select>
+				<Button
+					type="secondary"
+					class="share-button"
+					@click="unshareWith"
+				>
+					Usuń współdzielenie
+				</Button>
+			</div>
 		</section>
 	</div>
 
@@ -2407,7 +2410,7 @@ export default spline;
 	</div>
 </template>
 
-<script setup>
+  <script setup>
 	import {
 		defineProps,
 		inject,
@@ -2417,7 +2420,6 @@ export default spline;
 		onMounted,
 		onBeforeUnmount,
 		ref,
-		watch,
 	} from "vue";
 	import "@fortawesome/fontawesome-free/css/all.css";
 	import Button from "@/components/Button.vue";
@@ -2436,6 +2438,10 @@ export default spline;
 	const lists = inject("lists");
 	const toast = useToast();
 
+	const allUsers = ref([]);
+	const selectedUserToShare = ref("");
+	const selectedUserToUnshare = ref("");
+
 	const getAuthHeaders = () => {
 		const email = localStorage.getItem("authEmail");
 		const password = localStorage.getItem("authPassword");
@@ -2452,6 +2458,104 @@ export default spline;
 	const list = computed(() => {
 		return lists.lists.find((l) => l.id === listId.value) || null;
 	});
+
+	onMounted(async () => {
+		await fetchAllUsers();
+		syncFast();
+	});
+
+	async function fetchAllUsers() {
+		try {
+			const resp = await axios.get(
+				"https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/getAllUsers",
+				{
+					headers: getAuthHeaders(),
+					withCredentials: true,
+				}
+			);
+			allUsers.value = resp.data;
+		} catch (error) {
+			console.error(
+				"Błąd podczas pobierania listy wszystkich użytkowników:",
+				error
+			);
+		}
+	}
+
+	const filteredAllUsers = computed(() => {
+		if (!list.value) return [];
+		return allUsers.value.filter(
+			(email) =>
+				email !== list.value.owner && !list.value.users.includes(email)
+		);
+	});
+
+	const shareWith = async () => {
+		if (!selectedUserToShare.value) {
+			toast.error("Wybierz użytkownika, któremu chcesz udostępnić!");
+			return;
+		}
+		if (!list.value) {
+			toast.error("Nie znaleziono listy – odśwież stronę.");
+			return;
+		}
+		try {
+			const emailToShare = selectedUserToShare.value;
+			await axios.post(
+				`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/addSharedUser/${list.value.id}?email=${emailToShare}`,
+				null,
+				{
+					headers: {
+						"Content-Type": "application/json",
+						...getAuthHeaders(),
+					},
+					withCredentials: true,
+				}
+			);
+			toast.success(
+				`Użytkownik ${emailToShare} został dodany do współdzielenia!`
+			);
+			selectedUserToShare.value = "";
+			await refreshListData();
+		} catch (error) {
+			console.error("Error trying to share this list", error);
+			toast.error("Błąd podczas udostępniania listy.");
+		}
+	};
+
+	const unshareWith = async () => {
+		if (!selectedUserToUnshare.value) {
+			toast.error(
+				"Wybierz użytkownika, którego chcesz usunąć ze współdzielenia!"
+			);
+			return;
+		}
+		if (!list.value) {
+			toast.error("Nie znaleziono listy – odśwież stronę.");
+			return;
+		}
+		try {
+			const emailToRemove = selectedUserToUnshare.value;
+			await axios.delete(
+				`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/removeSharedUser/${list.value.id}`,
+				{
+					headers: getAuthHeaders(),
+					params: {
+						email: emailToRemove,
+					},
+					withCredentials: true,
+				}
+			);
+			toast.success(
+				`Użytkownik ${emailToRemove} został usunięty ze współdzielenia!`
+			);
+			selectedUserToUnshare.value = "";
+			await refreshListData();
+		} catch (error) {
+			console.error("Error trying to unshare this list", error);
+			toast.error("Błąd podczas usuwania współdzielenia.");
+		}
+	};
 
 	const inputRefs = reactive({});
 
@@ -2482,51 +2586,7 @@ export default spline;
 		}
 	};
 
-	const removeItem = async (itemId) => {
-		const index = list.value.items.findIndex((i) => i.id === itemId);
-		if (index !== -1) {
-			try {
-				await axios.delete(
-					`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/deleteItemById/${itemId}`,
-					{
-						headers: getAuthHeaders(),
-						withCredentials: true,
-					}
-				);
-				list.value.items.splice(index, 1);
-				delete inputRefs[`text-${itemId}`];
-				delete inputRefs[`unit-${itemId}`];
-				delete inputRefs[`amount-${itemId}`];
-			} catch (error) {
-				console.error("Error deleting item:", error);
-			}
-		}
-	};
-
-	const renameList = async () => {
-		if (list.value) {
-			try {
-				await axios.put(
-					`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/renameList/${list.value.id}`,
-					list.value.name,
-					{
-						headers: {
-							"Content-Type": "text/plain",
-							...getAuthHeaders(),
-						},
-						params: {
-							newName: list.value.name,
-						},
-						withCredentials: true,
-					}
-				);
-			} catch (error) {
-				console.error("Error renaming list:", error);
-			}
-		}
-	};
-
-	const saveNewItem = async (item) => {
+	async function saveNewItem(item) {
 		try {
 			const response = await axios.post(
 				`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/addNewItem/${list.value.id}`,
@@ -2550,9 +2610,30 @@ export default spline;
 			console.error("Error adding new item:", error);
 			return null;
 		}
+	}
+
+	const removeItem = async (itemId) => {
+		const index = list.value.items.findIndex((i) => i.id === itemId);
+		if (index !== -1) {
+			try {
+				await axios.delete(
+					`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/deleteItemById/${itemId}`,
+					{
+						headers: getAuthHeaders(),
+						withCredentials: true,
+					}
+				);
+				list.value.items.splice(index, 1);
+				delete inputRefs[`text-${itemId}`];
+				delete inputRefs[`unit-${itemId}`];
+				delete inputRefs[`amount-${itemId}`];
+			} catch (error) {
+				console.error("Error deleting item:", error);
+			}
+		}
 	};
 
-	const updateItem = async (item) => {
+	async function updateItem(item) {
 		const exists = list.value.items.some((i) => i.id === item.id);
 		if (!exists) {
 			console.warn(
@@ -2587,9 +2668,9 @@ export default spline;
 		} catch (error) {
 			console.error("Error updating item:", error);
 		}
-	};
+	}
 
-	const changeItemStatus = async (item) => {
+	async function changeItemStatus(item) {
 		try {
 			await axios.put(
 				`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/changeStateOfItem/${item.id}`,
@@ -2599,40 +2680,37 @@ export default spline;
 					withCredentials: true,
 				}
 			);
-
 			if (!item.status) {
 				inputRefs[`text-${item.id}`]?.focus();
 			}
 		} catch (error) {
 			console.error("Error changing item status:", error);
 		}
-	};
+	}
 
-	const shareWith = async () => {
-		try {
-			await axios.post(
-				`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/addSharedUser/${list.value.id}?email=rafalmironko@gmail.com`,
-				null,
-				{
-					headers: {
-						"Content-Type": "text/plain",
-						...getAuthHeaders(),
-					},
-					withCredentials: true,
-				}
-			);
-		} catch (error) {
-			console.error("Error trying to share this list", error);
+	async function renameList() {
+		if (list.value) {
+			try {
+				await axios.put(
+					`https://mylovelyserver.fun:8443/pap_shopping_list/api/lists/renameList/${list.value.id}`,
+					list.value.name,
+					{
+						headers: {
+							"Content-Type": "text/plain",
+							...getAuthHeaders(),
+						},
+						params: {
+							newName: list.value.name,
+						},
+						withCredentials: true,
+					}
+				);
+			} catch (error) {
+				console.error("Error renaming list:", error);
+			}
 		}
-	};
+	}
 
-	/*
-																--------------------------
-																Mechanizm synchronizacji
-																--------------------------
-															*/
-
-	// Funkcja odświeżająca listę
 	const refreshListData = async () => {
 		console.log("Wywołanie refreshListData dla listy ID:", listId.value);
 		try {
@@ -2646,10 +2724,9 @@ export default spline;
 		}
 	};
 
-	const updateListInStore = (freshData) => {
+	function updateListInStore(freshData) {
 		const index = lists.lists.findIndex((l) => l.id === freshData.id);
 		if (index !== -1) {
-			// Aktualizacja istniejącej listy
 			lists.lists[index].name = freshData.name;
 			lists.lists[index].owner = freshData.owner;
 			lists.lists[index].users = reactive(
@@ -2663,13 +2740,12 @@ export default spline;
 			);
 			console.log(`Lista ID ${freshData.id} zaktualizowana.`);
 		} else {
-			// Lista nie została znaleziona – dodajemy nową listę do store
 			console.warn(
 				"Lista nieznaleziona w store podczas synchronizacji. Dodaję nową listę."
 			);
-			// Ewentualnie stwórz nowy obiekt List
 		}
-	};
+	}
+
 	let syncInterval = null;
 
 	function startSync(intervalMs) {
@@ -2679,20 +2755,15 @@ export default spline;
 		syncInterval = setInterval(refreshListData, intervalMs);
 	}
 
-	// Funkcje sterujące interwałem:
 	function syncFast() {
-		console.log("Blur detected - switching to fast sync (100ms)");
+		console.log("Blur detected - switching to fast sync (500ms)");
 		startSync(500);
 	}
 
 	function syncSlow() {
-		console.log("Focus detected - switching to slow sync (5000ms)");
+		console.log("Focus detected - switching to slow sync (20s)");
 		startSync(20000);
 	}
-
-	onMounted(() => {
-		syncFast(); // Uruchamiamy domyślnie szybką synchronizację
-	});
 
 	onBeforeUnmount(() => {
 		if (syncInterval) {
@@ -2701,8 +2772,7 @@ export default spline;
 	});
 </script>
 
-
-<style scoped lang="scss">
+  <style scoped lang="scss">
 	:root {
 		--primary-color: #007bff;
 		--primary-color-hover: #0056b3;
@@ -2792,10 +2862,6 @@ export default spline;
 			.input-amount {
 				flex-shrink: 1;
 				min-width: 0;
-
-				&:focus {
-					border-color: red;
-				}
 			}
 
 			.item-actions {
@@ -2860,6 +2926,33 @@ export default spline;
 		p {
 			margin: 5px 0;
 		}
+
+		.share-section,
+		.unshare-section {
+			margin-top: 20px;
+
+			h3 {
+				margin-bottom: 8px;
+				color: var(--text-color);
+			}
+
+			.share-select {
+				min-width: 180px;
+				margin-right: 10px;
+				padding: 6px;
+				border-radius: 4px;
+				border: 1px solid var(--border-color);
+				outline: none;
+				background-color: #fff;
+				font-size: 14px;
+				color: var(--text-color);
+			}
+
+			.share-button {
+				width: auto;
+				min-width: 120px;
+			}
+		}
 	}
 
 	.no-list {
@@ -2888,6 +2981,20 @@ export default spline;
 
 		.list-info {
 			font-size: 0.9rem;
+
+			.share-section,
+			.unshare-section {
+				display: flex;
+				flex-direction: column;
+
+				.share-select {
+					margin-bottom: 10px;
+				}
+
+				.share-button {
+					width: 100%;
+				}
+			}
 		}
 	}
 </style>
