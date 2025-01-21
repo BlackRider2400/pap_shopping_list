@@ -1,6 +1,5 @@
 <template>
 	<div id="home-page">
-		<!-- Sekcja Hero -->
 		<section class="hero">
 			<div class="hero-overlay"></div>
 			<div class="hero-content">
@@ -12,7 +11,6 @@
 			</div>
 		</section>
 
-		<!-- Sekcja "Co można zrobić" -->
 		<section class="features">
 			<div class="container">
 				<h2>
@@ -61,7 +59,6 @@
 			</div>
 		</section>
 
-		<!-- Sekcja "Dlaczego my" -->
 		<section class="features why-us">
 			<div class="container">
 				<h2>Dlaczego powienieneś korzystać z naszej listy?</h2>
@@ -79,7 +76,6 @@
 			</div>
 		</section>
 
-		<!-- Kontenery Three.js (wkomponowane w layout) -->
 		<section class="three-section">
 			<h2 class="three-title">
 				Lista tak dobra, że wywali Cię na księżyc<br />(lub do tunelu
@@ -89,7 +85,6 @@
 			<div ref="threeContainerSecond" class="three-container"></div>
 		</section>
 
-		<!-- Sekcja CTA na dole strony -->
 		<section class="cta">
 			<div class="container">
 				<h2>Dołącz do tysięcy zadowolonych użytkowników!</h2>
@@ -235,14 +230,12 @@
 			const w = threeContainerSecond.value.clientWidth;
 			const h = threeContainerSecond.value.clientHeight;
 
-			// Renderer
 			const renderer = new THREE.WebGLRenderer({ antialias: true });
 			renderer.setSize(w, h);
 			renderer.toneMapping = THREE.ACESFilmicToneMapping;
 			renderer.outputColorSpace = THREE.SRGBColorSpace;
 			threeContainerSecond.value.appendChild(renderer.domElement);
 
-			// Camera
 			const fov = 75;
 			const aspect = w / h;
 			const near = 0.1;
@@ -250,16 +243,13 @@
 			const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
 			camera.position.z = 30;
 
-			// Scene
 			const scene = new THREE.Scene();
 			scene.fog = new THREE.FogExp2(0x000000, 0.3);
 
-			// Controls
 			const controls = new OrbitControls(camera, renderer.domElement);
 			controls.enableDamping = true;
 			controls.dampingFactor = 0.03;
 
-			// Post processing
 			const renderScene = new RenderPass(scene, camera);
 			const bloomPass = new UnrealBloomPass(
 				new THREE.Vector2(w, h),
@@ -274,16 +264,13 @@
 			composer.addPass(renderScene);
 			composer.addPass(bloomPass);
 
-			// Tworzenie geometrii Tube
 			const tubeGeo = new THREE.TubeGeometry(spline, 222, 0.65, 16, true);
 
-			// Krawędzie rurki
 			const edges = new THREE.EdgesGeometry(tubeGeo, 0.2);
 			const lineMat = new THREE.LineBasicMaterial({ color: 0xff0000 });
 			const tubeLines = new THREE.LineSegments(edges, lineMat);
 			scene.add(tubeLines);
 
-			// Dodanie kostek
 			const numBoxes = 55;
 			const size = 0.075;
 			const boxGeo = new THREE.BoxGeometry(size, size, size);
@@ -325,7 +312,6 @@
 				camera.lookAt(lookAt);
 			}
 
-			// Animacja
 			function animate(t = 0) {
 				requestAnimationFrame(animate);
 				updateCamera(t);
@@ -348,7 +334,6 @@
 		width: 40%;
 	}
 
-	/* Sekcja Hero */
 	.hero {
 		position: relative;
 		background: url("@/assets/shopper.png") center center/cover no-repeat;
@@ -389,7 +374,6 @@
 		}
 	}
 
-	/* Sekcje .features */
 	.features {
 		padding: 60px 20px;
 		background-color: #f9f9f9;
@@ -453,12 +437,10 @@
 		}
 	}
 
-	/* Sekcja "Dlaczego my" (możemy dodać inne tło) */
 	.why-us {
 		background-color: #ffffff;
 	}
 
-	/* Sekcja Three.js */
 	.three-section {
 		background-color: #f9f9f9;
 		padding: 60px 20px;
@@ -479,7 +461,6 @@
 		}
 	}
 
-	/* Sekcja CTA */
 	.cta {
 		padding: 60px 20px;
 		background-color: #007bff;
@@ -512,7 +493,6 @@
 		}
 	}
 
-	/* Responsywność */
 	@media (max-width: 768px) {
 		.cta-button {
 			width: 100%;

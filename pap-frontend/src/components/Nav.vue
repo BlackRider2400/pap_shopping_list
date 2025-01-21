@@ -1,7 +1,7 @@
 <template>
 	<nav>
 		<div id="logo">
-			<router-link to="/">Logo jest tutaj</router-link>
+			<router-link to="/">Shoppin' List 2000</router-link>
 		</div>
 		<div id="burger" @click="toggleMenu">☰</div>
 		<div id="link-tree-overlay" :class="{ active: isMenuOpen }">
@@ -68,25 +68,23 @@
 		}
 	}
 
-	/* Pełnoekranowe pokrycie po otwarciu menu */
 	#link-tree-overlay {
 		position: fixed;
 		top: 0;
 		left: 0;
 		width: 100%;
 		height: 100%;
-		background-color: rgba(0, 0, 0, 0.9); /* Półprzezroczyste tło */
-		display: none; /* Domyślnie ukryte */
+		background-color: rgba(0, 0, 0, 0.9);
+		display: none;
 		justify-content: center;
 		align-items: center;
 		z-index: 15;
 
 		&.active {
-			display: flex; /* Pokaż menu */
+			display: flex;
 		}
 	}
 
-	/* Styl menu linków */
 	#link-tree {
 		display: flex;
 		flex-direction: column;

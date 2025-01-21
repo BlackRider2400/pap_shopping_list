@@ -56,7 +56,6 @@
 		isLoading.value = true;
 
 		try {
-			// Wysyłamy żądanie POST /request-password-reset z parametrem email
 			const response = await axios.post(
 				"https://mylovelyserver.fun:8443/pap_shopping_list/api/auth/request-password-reset",
 				null,
@@ -64,18 +63,15 @@
 					params: {
 						email: email.value,
 					},
-					withCredentials: false, // Zwykle nie trzeba cookies w zapomnianym haśle
+					withCredentials: false,
 				}
 			);
 
 			if (response.status === 200) {
-				// Serwer zwraca "If the email exists, a password reset link will be sent."
 				infoMessage.value =
 					"Jeśli email istnieje w bazie, wysłaliśmy link resetujący hasło.";
 			}
 		} catch (error) {
-			// W /request-password-reset i tak zwykle jest 200,
-			// ale gdyby backend inaczej to obsługiwał (np. 4xx), można to przechwycić
 			apiError.value = "Wystąpił problem z wysłaniem żądania resetu hasła.";
 		} finally {
 			isLoading.value = false;

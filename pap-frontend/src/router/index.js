@@ -1,6 +1,4 @@
-// router/index.js
 import { createRouter, createWebHistory } from "vue-router";
-import Cookies from "js-cookie";
 
 const routes = [
 	{
@@ -23,14 +21,14 @@ const routes = [
 		redirect: "/lists/1",
 		name: "Lists",
 		component: () => import("../views/Lists.vue"),
-		meta: { requiresAuth: true }, // Wymaga autoryzacji
+		meta: { requiresAuth: true },
 		children: [
 			{
 				path: ":id",
 				name: "ListDetail",
 				component: () => import("../views/Lists/ListBody.vue"),
 				props: true,
-				meta: { requiresAuth: true }, // Wymaga autoryzacji
+				meta: { requiresAuth: true },
 			},
 		],
 	},
@@ -51,7 +49,6 @@ const router = createRouter({
 	routes,
 });
 
-// Globalny strażnik nawigacyjny
 router.beforeEach((to, from, next) => {
 	const requiresAuth = to.matched.some((record) => record.meta.requiresAuth);
 	const isAuthenticated = localStorage.getItem("isAuthenticated") === "true";

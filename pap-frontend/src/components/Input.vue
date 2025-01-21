@@ -67,7 +67,6 @@
 		},
 	});
 
-	// Zaktualizowana lista emitowanych wydarzeń: zmieniono "focused" na "focus"
 	const emit = defineEmits(["update:modelValue", "focus", "blur"]);
 
 	const updateValue = (event) => {
@@ -79,7 +78,7 @@
 	const setFocus = () => {
 		if (inputRef.value) {
 			inputRef.value.focus();
-			emit("focus"); // Emitujemy focus przy programowym ustawieniu fokusu
+			emit("focus");
 		}
 	};
 
@@ -92,7 +91,6 @@
 		}
 	);
 
-	// Nowa funkcja obsługująca focus
 	const handleFocus = (event) => {
 		emit("focus", event);
 	};

@@ -1,7 +1,6 @@
 <template>
 	<div id="content" v-if="list">
 		<section class="list-header">
-			<!-- Dodajemy @focus i @blur na Input -->
 			<Input
 				v-model="list.name"
 				:id="list.id.toString()"
@@ -34,7 +33,6 @@
 							class="item-checkbox"
 						/>
 
-						<!-- Tekst pozycji -->
 						<Input
 							class="input-text"
 							v-model="item.data"
@@ -52,7 +50,6 @@
 							"
 						/>
 
-						<!-- Jednostka -->
 						<Input
 							class="input-unit"
 							v-model="item.unit"
@@ -70,7 +67,6 @@
 							"
 						/>
 
-						<!-- Ilość -->
 						<Input
 							class="input-amount"
 							type="number"
@@ -108,11 +104,9 @@
 			<p>Owner: {{ list.owner }}</p>
 			<p>Users: {{ list.users.map((user) => user).join(", ") }}</p>
 
-			<!-- Sekcja udostępniania -->
 			<div class="share-section">
 				<h3>Udostępnij listę</h3>
 
-				<!-- Select do wyboru użytkownika, którego chcemy dodać -->
 				<select
 					v-model="selectedUserToShare"
 					class="share-select"
@@ -133,11 +127,9 @@
 				</Button>
 			</div>
 
-			<!-- Sekcja usuwania udostępnienia (unshare) -->
 			<div class="unshare-section" v-if="list.users.length > 0">
 				<h3>Usuń współdzielenie</h3>
 
-				<!-- Select z aktualnie współdzielonymi userami: -->
 				<select
 					v-model="selectedUserToUnshare"
 					class="share-select"
@@ -197,14 +189,10 @@
 	const lists = inject("lists");
 	const toast = useToast();
 
-	// ======================================
-	// DANE/REFERENCJE DO UDOSTĘPNIANIA
-	// ======================================
-	const allUsers = ref([]); // Tutaj wczytamy z /getAllUsers
+	const allUsers = ref([]);
 	const selectedUserToShare = ref("");
 	const selectedUserToUnshare = ref("");
 
-	// Pobiera nagłówki autoryzacji
 	const getAuthHeaders = () => {
 		const email = localStorage.getItem("authEmail");
 		const password = localStorage.getItem("authPassword");
@@ -222,12 +210,9 @@
 		return lists.lists.find((l) => l.id === listId.value) || null;
 	});
 
-	// ===========================
-	//  Inicjalne pobranie allUsers
-	// ===========================
 	onMounted(async () => {
 		await fetchAllUsers();
-		syncFast(); // Uruchamiamy domyślnie szybką synchronizację
+		syncFast();
 	});
 
 	async function fetchAllUsers() {
@@ -239,7 +224,6 @@
 					withCredentials: true,
 				}
 			);
-			// Zakładamy, że zwraca tablicę np. ["user1@example.com", "user2@example.com", ...]
 			allUsers.value = resp.data;
 		} catch (error) {
 			console.error(
@@ -249,22 +233,14 @@
 		}
 	}
 
-	// Filtrujemy, żeby nie pokazywać np. właściciela listy czy zalogowanego usera
-	// (jeśli tak chcesz, możesz również filtrować).
 	const filteredAllUsers = computed(() => {
 		if (!list.value) return [];
-		// Możemy usunąć z listy:
-		// 1) wlasny email (zalogowany)
-		// 2) email właściciela listy
-		// 3) już współdzielonych?
-		// Poniżej prosty przykład: wykluczam właściciela i już-współdzielonych:
 		return allUsers.value.filter(
 			(email) =>
 				email !== list.value.owner && !list.value.users.includes(email)
 		);
 	});
 
-	// Udostępnianie listy
 	const shareWith = async () => {
 		if (!selectedUserToShare.value) {
 			toast.error("Wybierz użytkownika, któremu chcesz udostępnić!");
@@ -291,7 +267,6 @@
 				`Użytkownik ${emailToShare} został dodany do współdzielenia!`
 			);
 			selectedUserToShare.value = "";
-			// Odswieżamy listę z backendu, by mieć aktualną tablicę users
 			await refreshListData();
 		} catch (error) {
 			console.error("Error trying to share this list", error);
@@ -299,7 +274,6 @@
 		}
 	};
 
-	// Usuwanie współdzielenia
 	const unshareWith = async () => {
 		if (!selectedUserToUnshare.value) {
 			toast.error(
@@ -333,10 +307,6 @@
 			toast.error("Błąd podczas usuwania współdzielenia.");
 		}
 	};
-
-	// ===========================
-	//  Obsługa itemów i listy
-	// ===========================
 
 	const inputRefs = reactive({});
 
@@ -469,7 +439,6 @@
 		}
 	}
 
-	// Zmiana nazwy listy
 	async function renameList() {
 		if (list.value) {
 			try {
@@ -493,9 +462,6 @@
 		}
 	}
 
-	// ========================================
-	//  Synchronizacja listy z serwerem
-	// ========================================
 	const refreshListData = async () => {
 		console.log("Wywołanie refreshListData dla listy ID:", listId.value);
 		try {
@@ -512,7 +478,6 @@
 	function updateListInStore(freshData) {
 		const index = lists.lists.findIndex((l) => l.id === freshData.id);
 		if (index !== -1) {
-			// Aktualizacja istniejącej listy
 			lists.lists[index].name = freshData.name;
 			lists.lists[index].owner = freshData.owner;
 			lists.lists[index].users = reactive(
@@ -526,15 +491,12 @@
 			);
 			console.log(`Lista ID ${freshData.id} zaktualizowana.`);
 		} else {
-			// Lista nie została znaleziona – dodajemy nową listę do store
 			console.warn(
 				"Lista nieznaleziona w store podczas synchronizacji. Dodaję nową listę."
 			);
-			// Ewentualnie stwórz nowy obiekt List
 		}
 	}
 
-	// Mechanizm timed sync
 	let syncInterval = null;
 
 	function startSync(intervalMs) {
@@ -544,7 +506,6 @@
 		syncInterval = setInterval(refreshListData, intervalMs);
 	}
 
-	// Funkcje sterujące interwałem:
 	function syncFast() {
 		console.log("Blur detected - switching to fast sync (500ms)");
 		startSync(500);

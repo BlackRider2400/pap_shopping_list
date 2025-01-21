@@ -49,7 +49,6 @@
 	const successMessage = ref("");
 	const isLoading = ref(false);
 
-	// Pobieramy token z query param
 	let token = "";
 
 	onMounted(() => {
@@ -102,7 +101,6 @@
 
 			if (response.status === 200) {
 				successMessage.value = "Hasło zostało pomyślnie zmienione!";
-				// Opcjonalnie przekieruj użytkownika do logowania po 2-3 sekundach
 				setTimeout(() => {
 					router.push({ name: "LogIn" });
 				}, 2000);
