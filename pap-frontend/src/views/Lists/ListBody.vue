@@ -97,12 +97,17 @@
 					</div>
 				</li>
 			</ul>
-			<Button class="add-item-button" @click="addItem">Add Item</Button>
+			<Button class="add-item-button" @click="addItem"
+				>Dodaj Przedmiot</Button
+			>
 		</section>
 
 		<section class="list-info">
-			<p>Owner: {{ list.owner }}</p>
-			<p>Users: {{ list.users.map((user) => user).join(", ") }}</p>
+			<!-- <p>Owner: {{ list.owner }}</p> -->
+			<p>
+				Użytkownicy listy:
+				{{ list.users.map((user) => user).join(", ") }}
+			</p>
 
 			<div class="share-section">
 				<h3>Udostępnij listę</h3>
