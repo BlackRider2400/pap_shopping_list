@@ -70,7 +70,10 @@ public class PapShoppingListController {
         Long userId = getCurrentUserId();
         if (dbService.isOwnerOfList(id, userId)) {
             dbService.deleteShoppingList(id);
-            return ResponseEntity.noContent().build();
+            return ResponseEntity.ok().build();
+        } else if(dbService.isSharedUserOfList(id, userId)){
+            dbService.removeSharedUserFromList(id, userId);
+            return ResponseEntity.ok().build();
         }
         return ResponseEntity.status(403).build();
     }

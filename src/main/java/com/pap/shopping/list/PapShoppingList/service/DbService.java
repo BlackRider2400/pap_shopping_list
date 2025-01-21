@@ -47,8 +47,15 @@ public class DbService {
         userRepository.save(user);
 
         String resetLink = "https://mylovelyserver.fun:/pap_shopping_list/reset-password?token=" + resetToken;
-        emailService.sendEmail(user.getEmail(), "Password Reset Request", "Hi!\nClick the link to reset your password: " + resetLink +
-                " \n");
+        String emailContent = "<html>" +
+                "<body>" +
+                "<p>Hi!</p>" +
+                "<p>Click the link below to reset your password:</p>" +
+                "<p><a href=\"" + resetLink + "\">Reset Password</a></p>" +
+                "</body>" +
+                "</html>";
+
+        emailService.sendEmail(user.getEmail(), "Password Reset Request", emailContent);
     }
 
     public void resetPassword(String token, String newPassword) {
@@ -171,6 +178,17 @@ public class DbService {
                 .orElseThrow(() -> new IllegalArgumentException("Shopping list not found"));
 
         User sharedUser = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        shoppingList.getSharedUsers().remove(sharedUser);
+        shoppingListRepository.save(shoppingList);
+    }
+
+    public void removeSharedUserFromList(Long listId, Long userId) {
+        ShoppingList shoppingList = shoppingListRepository.findById(listId)
+                .orElseThrow(() -> new IllegalArgumentException("Shopping list not found"));
+
+        User sharedUser = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         shoppingList.getSharedUsers().remove(sharedUser);
